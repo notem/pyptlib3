@@ -11,6 +11,15 @@ import logging
 
 __docformat__ = 'restructuredtext'
 
+"""Receive "<addr>:<port>" in 'string', and return [<addr>,<port>]."""
+def parse_addrport(string):
+    addrport = string.split(':')
+
+    if (len(addrport) != 2):
+        return None
+    addrport[1] = int(addrport[1]) # XXX lame integer check
+
+    return addrport
 
 class Config:
 

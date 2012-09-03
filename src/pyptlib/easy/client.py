@@ -9,9 +9,20 @@ from pyptlib.client import ClientConfig
 
 def init(transports):
     """
-        Initialize the pluggable transport by parsing the environment variables and generating output to report any errors.
-        The given transports are checked against the transports enabled by Tor and a list of matching transports is returned.
-        The client should then launched all of the transports in the list and report on the success or failure of those launches.
+    Initialize the pluggable transport by parsing the environment
+    variables and generating output to report any errors.  The given
+    transports are checked against the transports enabled by a
+    dictionary containing information for the managed proxy is
+    returned.
+
+    The dictionary contains the following keys and values:
+
+    'state_loc' : Directory where the managed proxy should dump its
+    state files (if needed).
+
+    'transports' : The names of the transports that must be launched.
+
+    Returns None if something went wrong.
     """
 
     supportedTransportVersion = '1'
@@ -19,20 +30,26 @@ def init(transports):
     try:
         config = ClientConfig()
     except EnvException:
-        return []
+        return None
 
     if config.checkManagedTransportVersion(supportedTransportVersion):
         config.writeVersion(supportedTransportVersion)
     else:
         config.writeVersionError()
-        return []
+        return None
 
     matchedTransports = []
     for transport in transports:
         if config.checkTransportEnabled(transport):
             matchedTransports.append(transport)
 
-    return matchedTransports
+    # XXX the XXXs from server.py are valid here too.
+
+    retval = {}
+    retval['state_loc'] = config.getStateLocation()
+    retval['transports'] = matchedTransports
+
+    return retval
 
 
 def reportSuccess(

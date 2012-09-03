@@ -21,8 +21,12 @@ def launchClient(self, name, port):
 if __name__ == '__main__':
     supportedTransports = ['dummy', 'rot13']
 
-    matchedTransports = init(supportedTransports)
-    for transport in matchedTransports:
+    managed_info = init(supportedTransports)
+    if managed_info is None:
+        print "Failed!"
+        return
+
+    for transport in managed_info['transports']:
         try:
             launchClient(transport, 8182)
             reportSuccess(transport, 5, ('127.0.0.1', 8182), None, None)

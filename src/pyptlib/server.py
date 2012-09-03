@@ -8,12 +8,11 @@
 
 import os
 
-from pyptlib.config import Config
+import pyptlib.config as config
 
 __docformat__ = 'restructuredtext'
 
-
-class ServerConfig(Config):
+class ServerConfig(config.Config):
 
     """
     The ServerConfig class contains a low-level API which closely follows the Tor Proposal 180: Pluggable transports for circumvention.
@@ -32,29 +31,31 @@ class ServerConfig(Config):
             This causes the state location, managed transport, and transports version to be set.
         """
 
-        Config.__init__(self)
+        config.Config.__init__(self)
 
-        self.extendedServerPort = self.get('TOR_PT_EXTENDED_SERVER_PORT'
-                )
-        orport = self.get('TOR_PT_ORPORT').split(':')
-	orport[1]=int(orport[1])
-	self.ORPort=orport
+        # extendedORPort can also be 'None'
+        self.extendedORPort = config.parse_addrport(self.get('TOR_PT_EXTENDED_SERVER_PORT'))
+        self.ORPort = config.parse_addrport(self.get('TOR_PT_ORPORT'))
+
+        if self.ORPort is None:
+            raise config.EnvException("ORPort was corrupted")
+
 
         binds = self.get('TOR_PT_SERVER_BINDADDR').split(',')
         for bind in binds:
             (key, value) = bind.split('-')
-            self.serverBindAddr[key] = value
+            self.serverBindAddr[key] = value.split(":") # XXX ugly code
+            self.serverBindAddr[key][1] = int(self.serverBindAddr[key][1]) # XXX ugly code
 
-        self.transports = self.get('TOR_PT_SERVER_TRANSPORTS').split(','
-                )
+        self.transports = self.get('TOR_PT_SERVER_TRANSPORTS').split(',')
         if '*' in self.transports:
             self.allTransportsEnabled = True
             self.transports.remove('*')
 
-    def getExtendedServerPort(self):
+    def getExtendedORPort(self):
         """ Returns a tuple (str,int) representing the address of the Tor server port as reported by Tor """
 
-        return self.extendedServerPort
+        return self.extendedORPort
 
     def getORPort(self):
         """ Returns a tuple (str,int) representing the address of the Tor OR port as reported by Tor """

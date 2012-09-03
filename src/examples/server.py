@@ -21,11 +21,15 @@ def launchServer(self, name, port):
 if __name__ == '__main__':
     supportedTransports = ['dummy', 'rot13']
 
-    matchedTransports = init(supportedTransports)
-    for transport in matchedTransports:
+    managed_info = init(supportedTransports)
+    if managed_info is None:
+        print "Failed!"
+        return
+
+    for transport, transport_bindaddr in managed_info['transports'].items():
         try:
-            launchServer(transport, 8182)
-            reportSuccess(transport, ('127.0.0.1', 8182), None)
+            launchServer(transport, transport_bindaddr[1])
+            reportSuccess(transport, transport_bindaddr, None)
         except TransportLaunchException:
             reportFailure(transport, 'Failed to launch')
     reportEnd()

@@ -9,36 +9,61 @@ from pyptlib.server import ServerConfig
 
 def init(transports):
     """
-        Initialize the pluggable transport by parsing the environment variables and generating output to report any errors.
-        The given transports are checked against the transports enabled by Tor and a list of matching transports is returned.
-        The server should then launch all of the transports in the list and report on the success or failure of those launches.
+    Initialize the pluggable transport by parsing the environment
+    variables and generating output to report any errors.  The
+    given transports are checked against the transports enabled by
+    Tor and a dictionary containing information for the managed
+    proxy is returned.
+
+    The dictionary contains the following keys and values:
+
+    'state_loc' : Directory where the managed proxy should dump its
+    state files (if needed).
+
+    'orport' : [<addr>, <port>] tuple containing the address and port
+    of Tor's ORPort.
+
+    'ext_orport' : [<addr>, <port>] tuple containing the address and
+    port of Tor's Extended ORPort.
+
+    'transports' : A dictionary {<transport> : [<addr>, <port>]},
+    where <transport> is the name of the transport that must be
+    spawned, and [<addr>, <port>] is a list containing the location
+    where that transport should bind.
+
+    Returns None if something went wrong.
     """
 
     supportedTransportVersion = '1'
 
     try:
         config = ServerConfig()
-    except EnvException:
-        return []
+    except EnvException: # don't throw exceptions; return None
+        return None
 
     if config.checkManagedTransportVersion(supportedTransportVersion):
         config.writeVersion(supportedTransportVersion)
     else:
         config.writeVersionError()
-        return []
+        return None
 
     matchedTransports = []
     for transport in transports:
         if config.checkTransportEnabled(transport):
             matchedTransports.append(transport)
 
-    return matchedTransports
+    # XXX Must issue SMETHOD-ERROR when Tor asked us to spawn a
+    # XXX transport but we don't support it!!!!
 
+    # XXX what to do if matchedTransports is empty ???
 
-def getORPort():
-    config = ServerConfig()
-    return config.ORPort
+    retval = {}
+    retval['state_loc'] = config.getStateLocation()
+    retval['orport'] = config.getORPort()
+    retval['ext_orport'] = config.getExtendedORPort()
+    retval['transports'] = config.getServerBindAddresses()
 
+    return retval
 
 def reportSuccess(name, address, options):
     """
@@ -70,5 +95,3 @@ def reportEnd():
 
     config = ServerConfig()
     config.writeMethodEnd()
-
-

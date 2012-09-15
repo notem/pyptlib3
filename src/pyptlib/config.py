@@ -6,8 +6,7 @@
     This module contains the parts of the API which are shared by both client and server implementations of the protocol.
 """
 
-import os
-import logging
+import os, sys
 
 __docformat__ = 'restructuredtext'
 
@@ -117,8 +116,7 @@ class Config:
 
     def emit(self, msg):
         print msg
-        logging.error(msg)
-
+        sys.stdout.flush()
 
 # Exception thrown when there is an error parsing the configuration parameters provided by Tor in environment variables
 

@@ -4,7 +4,7 @@
 """ The pyptlib.easy.client module includes a convenient API for writing pluggable transport clients. """
 
 from pyptlib.config import EnvException
-from pyptlib.client import ClientConfig
+from pyptlib.client_config import ClientConfig
 
 
 def init(transports):

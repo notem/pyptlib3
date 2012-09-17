@@ -4,7 +4,7 @@
 """ The pyptlib.easy.server module includes a convenient API for writing pluggable transport servers. """
 
 from pyptlib.config import EnvException
-from pyptlib.server import ServerConfig
+from pyptlib.server_config import ServerConfig
 
 
 def init(transports):

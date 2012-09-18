@@ -7,7 +7,7 @@ from pyptlib.config import EnvException
 from pyptlib.server_config import ServerConfig
 
 
-def init(transports):
+def init(supported_transports):
     """
     Initialize the pluggable transport by parsing the environment
     variables and generating output to report any errors.  The
@@ -24,46 +24,58 @@ def init(transports):
     of Tor's ORPort.
 
     'ext_orport' : [<addr>, <port>] tuple containing the address and
-    port of Tor's Extended ORPort.
+    port of Tor's Extended ORPort, or None if the Extended ORPort it's
+    not supported.
 
     'transports' : A dictionary {<transport> : [<addr>, <port>]},
     where <transport> is the name of the transport that must be
     spawned, and [<addr>, <port>] is a list containing the location
-    where that transport should bind.
+    where that transport should bind. The dictionary can be empty.
 
-    Returns None if something went wrong.
+    Throws EnvException.
     """
 
     supportedTransportVersion = '1'
 
-    try:
-        config = ServerConfig()
-    except EnvException: # don't throw exceptions; return None
-        return None
+    config = ServerConfig()
 
     if config.checkManagedTransportVersion(supportedTransportVersion):
         config.writeVersion(supportedTransportVersion)
     else:
         config.writeVersionError()
-        return None
-
-    matchedTransports = []
-    for transport in transports:
-        if config.checkTransportEnabled(transport):
-            matchedTransports.append(transport)
-
-    # XXX Must issue SMETHOD-ERROR when Tor asked us to spawn a
-    # XXX transport but we don't support it!!!!
-
-    # XXX what to do if matchedTransports is empty ???
+        raise EnvException("Unsupported managed proxy protocol version (%s)" %
+                           str(config.getManagedTransportVersions()))
 
     retval = {}
     retval['state_loc'] = config.getStateLocation()
     retval['orport'] = config.getORPort()
     retval['ext_orport'] = config.getExtendedORPort()
-    retval['transports'] = config.getServerBindAddresses()
+    retval['transports'] = getTransportsDict(supported_transports, config)
 
     return retval
+
+def getTransportsDict(supported_transports, config):
+    """
+    Given the transport names that the managed proxy support in
+    'transports', and Tor's configuration in 'config', figure out
+    which transports Tor wants us to spawn and create the appropriate
+    dictionary.
+    """
+    transports = {}
+
+    if config.getAllTransportsEnabled():
+        return config.getServerBindAddresses()
+
+    for transport in config.getServerTransports():
+        if transport in supported_transports:
+            assert(transport in config.getServerBindAddresses())
+            transports[transport] = config.getServerBindAddresses()[transport]
+        else:
+            # Issue SMETHOD-ERROR when Tor asks us to spawn a
+            # transport that we do not support.
+            config.writeMethodError(transport, "not supported")
+
+    return transports
 
 def reportSuccess(name, address, options):
     """

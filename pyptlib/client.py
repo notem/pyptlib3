@@ -1,13 +1,15 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-""" The pyptlib.easy.client module includes a convenient API for writing pluggable transport clients. """
+"""
+This module provides a convenient API for writing pluggable transport clients.
+"""
 
 from pyptlib.config import EnvException
 from pyptlib.client_config import ClientConfig
 
 
-def init(transports):
+def init(supported_transports):
     """
     Initialize the pluggable transport by parsing the environment
     variables and generating output to report any errors.  The given
@@ -20,45 +22,44 @@ def init(transports):
     'state_loc' : Directory where the managed proxy should dump its
     state files (if needed).
 
-    'transports' : The names of the transports that must be launched.
+    'transports' : The names of the transports that must be
+    launched. The list can be empty.
 
-    Returns None if something went wrong.
+    Throws EnvException.
     """
 
     supportedTransportVersion = '1'
 
-    try:
-        config = ClientConfig()
-    except EnvException:
-        return None
+    config = ClientConfig()
 
     if config.checkManagedTransportVersion(supportedTransportVersion):
         config.writeVersion(supportedTransportVersion)
     else:
         config.writeVersionError()
-        return None
-
-    matchedTransports = []
-    for transport in transports:
-        if config.checkTransportEnabled(transport):
-            matchedTransports.append(transport)
-
-    # XXX the XXXs from server.py are valid here too.
+        raise EnvException("Unsupported managed proxy protocol version (%s)" %
+                           str(config.getManagedTransportVersions()))
 
     retval = {}
     retval['state_loc'] = config.getStateLocation()
-    retval['transports'] = matchedTransports
+    retval['transports'] = getTransportsList(supported_transports, config)
 
     return retval
 
+def getTransportsList(supported_transports, config):
+    transports = []
 
-def reportSuccess(
-    name,
-    socksVersion,
-    address,
-    args,
-    optArgs,
-    ):
+    if config.getAllTransportsEnabled():
+        return supported_transports
+
+    for transport in config.getClientTransports():
+        if transport in supported_transports:
+            transports.append(transport)
+        else:
+            config.writeMethodError(transport, "not supported")
+
+    return transports
+
+def reportSuccess(name, socksVersion, address, args, optArgs):
     """
         This method should be called to report when a transport has been successfully launched.
         It generates output to Tor informing that the transport launched successfully and can be used.

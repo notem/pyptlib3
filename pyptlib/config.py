@@ -2,23 +2,13 @@
 # -*- coding: utf-8 -*-
 
 """
-    The pyptlib.config module contains a low-level API which closely follows the Tor Proposal 180: Pluggable transports for circumvention.
-    This module contains the parts of the API which are shared by both client and server implementations of the protocol.
+This module contains parts of the managed proxy specification which
+are shared by both client and server implementations of the protocol.
 """
 
 import os, sys
 
 __docformat__ = 'restructuredtext'
-
-"""Receive "<addr>:<port>" in 'string', and return [<addr>,<port>]."""
-def parse_addrport(string):
-    addrport = string.split(':')
-
-    if (len(addrport) != 2):
-        return None
-    addrport[1] = int(addrport[1]) # XXX lame integer check
-
-    return addrport
 
 class Config:
 
@@ -34,12 +24,16 @@ class Config:
 
   # Public methods
 
-    def __init__(self):  # throws EnvError
-        """ Initialize the Config object. this causes the state location and managed transport version to be set. """
+    def __init__(self):
+        """
+        Initialize the Config object. this causes the state location
+        and managed transport version to be set.
+
+        Throws EnvException.
+        """
 
         self.stateLocation = self.get('TOR_PT_STATE_LOCATION')
-        self.managedTransportVer = \
-            self.get('TOR_PT_MANAGED_TRANSPORT_VER').split(',')
+        self.managedTransportVer = self.get('TOR_PT_MANAGED_TRANSPORT_VER').split(',')
 
     def checkClientMode(self):
         """ Check to see if the daemon is being run as a client or a server. This is determined by looking for the presence of the TOR_PT_CLIENT_TRANSPORTS environment variable. """
@@ -105,7 +99,11 @@ class Config:
         return key in os.environ
 
     def get(self, key):
-        """ Attempts to fetch the given key from the environment variables. If it is present, it is returned, otherwise an EnvException is thrown. """
+        """
+        Attempts to fetch the given key from the environment
+        variables. If it is present, it is returned, otherwise an
+        EnvException is thrown.
+        """
 
         if key in os.environ:
             return os.environ[key]
@@ -118,15 +116,9 @@ class Config:
         print msg
         sys.stdout.flush()
 
-# Exception thrown when there is an error parsing the configuration parameters provided by Tor in environment variables
 
-class EnvException(Exception):
-
-    """ The EnvException exception is thrown whenever a required environment variable is not presented or cannot be parsed. """
-
-    message = None
-
-    def __init__(self, message):
-        self.message = message
-
-
+"""
+Exception thrown when there is an error parsing managed proxy
+environment variables. Also sends an ENV-ERROR to Tor.
+"""
+class EnvException(Exception): pass

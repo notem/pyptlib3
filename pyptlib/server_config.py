@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-    The pyptlib.client module contains a low-level API which closely follows the Tor Proposal 180: Pluggable transports for circumvention.
-    This module inherits from pyptlib.config and contains just the parts of the API which are specific to the server implementations of the protocol.
+This module inherits from pyptlib.config and contains just the parts
+of the API which are specific to the server implementations of the
+protocol.
 """
 
 import os
@@ -13,36 +14,37 @@ import pyptlib.config as config
 __docformat__ = 'restructuredtext'
 
 class ServerConfig(config.Config):
-
     """
-    The ServerConfig class contains a low-level API which closely follows the Tor Proposal 180: Pluggable transports for circumvention.
-    This class inherits from pyptlib.config.Config and contains just the parts of the API which are specific to the client implementations of the protocol.
+    This class inherits from pyptlib.config.Config and contains just
+    the parts of the API which are specific to the client
+    implementations of the protocol.
     """
-
-    extendedServerPort = None  # TOR_PT_EXTENDED_SERVER_PORT
-    ORPort = None  # TOR_PT_ORPORT
-    serverBindAddr = {}  # TOR_PT_SERVER_BINADDR
-
   # Public methods
 
-    def __init__(self):  # throws EnvError
+    def __init__(self):
         """
-            Initialize the ClientConfig object.
-            This causes the state location, managed transport, and transports version to be set.
+        Initialize the ClientConfig object.
+        This causes the state location, managed transport, and transports version to be set.
+
+        Throws EnvException.
         """
 
         config.Config.__init__(self)
 
-        # extendedORPort can also be 'None'
-        self.extendedORPort = config.parse_addrport(self.get('TOR_PT_EXTENDED_SERVER_PORT'))
-        self.ORPort = config.parse_addrport(self.get('TOR_PT_ORPORT'))
+        # TOR_PT_EXTENDED_SERVER_PORT is optional; tor uses the empty
+        # string as its value if it does not support the Extended
+        # ORPort.
+        ext_orport_tmp = self.get('TOR_PT_EXTENDED_SERVER_PORT')
+        if ext_orport_tmp == '':
+            self.extendedORPort = None
+        else:
+            self.extendedORPort = self.get_addrport('TOR_PT_EXTENDED_SERVER_PORT')
 
-        if self.ORPort is None:
-            raise config.EnvException("ORPort was corrupted")
+        self.ORPort = self.get_addrport('TOR_PT_ORPORT')
 
-
-        binds = self.get('TOR_PT_SERVER_BINDADDR').split(',')
-        for bind in binds:
+        self.serverBindAddr = {}
+        bindaddrs = self.get('TOR_PT_SERVER_BINDADDR').split(',')
+        for bind in bindaddrs:
             (key, value) = bind.split('-')
             self.serverBindAddr[key] = value.split(":") # XXX ugly code
             self.serverBindAddr[key][1] = int(self.serverBindAddr[key][1]) # XXX ugly code
@@ -68,16 +70,15 @@ class ServerConfig(config.Config):
         return self.serverBindAddr
 
     def getServerTransports(self):
-        """ Returns a list of strings representing the server transports reported by Tor. If present, '*' is stripped from this list and used to set allTransportsEnabled to True. """
+        """
+        Returns a list of strings representing the server
+        transports reported by Tor. If present, '*' is stripped from
+        this list and used to set allTransportsEnabled to True.
+        """
 
         return self.transports
 
-    def writeMethod(  # SMETHOD
-        self,
-        name,
-        address,
-        options,
-        ):
+    def writeMethod(self, name, address, options):
         """
         Write a message to stdout specifying a supported transport
         Takes: str, (str, int), MethodOptions
@@ -103,6 +104,28 @@ class ServerConfig(config.Config):
 
         self.emit('SMETHODS DONE')
 
+    def get_addrport(self, key):
+        """
+        Given an environment variable name in 'key' with an
+        '<addr>:<port>' value, return [<addr>,<port>].
+
+        Throws EnvException.
+        """
+        string = self.get(key)
+
+        addrport = string.split(':')
+
+        if (len(addrport) != 2) or (not addrport[1].isdigit()):
+            message = '%s: Parsing error (%s).' % (key, string)
+            self.writeEnvError(message)
+            raise config.EnvException(message)
+
+        if (not 0 <= int(addrport[1]) < 65536):
+            message = '%s: Port out of range (%s).' % (key, string)
+            self.writeEnvError(message)
+            raise config.EnvException(message)
+
+        return addrport
 
 class MethodOptions:
 

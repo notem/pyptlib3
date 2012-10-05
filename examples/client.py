@@ -1,35 +1,32 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-""" This is an example client which shows how to call the pyptlib.easy high-level API. """
+"""This is a client-side example of the pyptlib API."""
 
-from pyptlib.client import init, reportSuccess, reportFailure, \
-    reportEnd
+import sys
 
-
-class TransportLaunchException(Exception):
-
-    pass
-
-
-def launchClient(self, name, port):
-    if name != 'dummy':
-        raise TransportLaunchException('Tried to launch unsupported transport %s'
-                 % name)
-
+import pyptlib
+import pyptlib.client
 
 if __name__ == '__main__':
-    supportedTransports = ['dummy', 'rot13']
-
-    managed_info = init(supportedTransports)
-    if managed_info is None:
-        print "Failed!"
-        return
+    try:
+        managed_info = pyptlib.client.init(["blackfish", "bluefish"])
+    except pyptlib.config.EnvError, err:
+        print "pyptlib could not bootstrap ('%s')." % str(err)
+        sys.exit(1)
 
     for transport in managed_info['transports']:
+        # Spawn all the transports in the list, and for each spawned
+        # transport report back the port where it is listening, and
+        # the SOCKS version it supports.
+
         try:
-            launchClient(transport, 8182)
-            reportSuccess(transport, 5, ('127.0.0.1', 8182), None, None)
-        except TransportLaunchException:
-            reportFailure(transport, 'Failed to launch')
-    reportEnd()
+            socks_version, bind_addrport = your_function_that_launches_transports(transport)
+        except YourFailException, err:
+            reportFailure(transport, "Failed to launch ('%s')." % str(err))
+            continue
+
+        pyptlib.client.reportSuccess(transport, socks_version, bind_addrport, None, None)
+
+    # After spawning our transports, report that we are done.
+    pyptlib.client.reportEnd()

@@ -2,8 +2,6 @@
 
 import sys
 
-sys.path.insert(0, 'src')
-
 from setuptools import setup
 
 setup(name='pyptlib',

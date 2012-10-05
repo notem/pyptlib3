@@ -29,7 +29,7 @@ class Config:
         Initialize the Config object. this causes the state location
         and managed transport version to be set.
 
-        Throws EnvException.
+        Throws EnvError.
         """
 
         self.stateLocation = self.get('TOR_PT_STATE_LOCATION')
@@ -102,7 +102,7 @@ class Config:
         """
         Attempts to fetch the given key from the environment
         variables. If it is present, it is returned, otherwise an
-        EnvException is thrown.
+        EnvError is thrown.
         """
 
         if key in os.environ:
@@ -110,7 +110,7 @@ class Config:
         else:
             message = 'Missing environment variable %s' % key
             self.writeEnvError(message)
-            raise EnvException(message)
+            raise EnvError(message)
 
     def emit(self, msg):
         print msg
@@ -121,4 +121,4 @@ class Config:
 Exception thrown when there is an error parsing managed proxy
 environment variables. Also sends an ENV-ERROR to Tor.
 """
-class EnvException(Exception): pass
+class EnvError(Exception): pass

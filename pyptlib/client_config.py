@@ -2,31 +2,25 @@
 # -*- coding: utf-8 -*-
 
 """
-This module inherits from pyptlib.config and contains just the parts
-of the API which are specific to the client implementations of the
-protocol.
+This module contains parts of the API that are only useful to clients.
 """
 
 from pyptlib.config import Config
 
-__docformat__ = 'restructuredtext'
-
-
 class ClientConfig(Config):
     """
-    This class inherits from pyptlib.config.Config and contains just
-    the parts of the API which are specific to the client
-    implementations of the protocol.
+    Attributes:
+
+    self.transports: List with strings of pluggable transport names
+    that Tor wants us to handle.
+
+    self.allTransportsEnabled: True if Tor wants us to spawn all the
+    transports.
     """
-
-  # Public methods
-
     def __init__(self):
         """
-        Initialize the ClientConfig object.
-        This causes the state location, managed transport, and transports version to be set.
-
-        Throws EnvException.
+        Initializer.
+        Throws EnvError.
         """
 
         Config.__init__(self)

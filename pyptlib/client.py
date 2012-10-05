@@ -5,7 +5,7 @@
 This module provides a convenient API for writing pluggable transport clients.
 """
 
-from pyptlib.config import EnvException
+from pyptlib.config import EnvError
 from pyptlib.client_config import ClientConfig
 
 
@@ -25,7 +25,7 @@ def init(supported_transports):
     'transports' : The names of the transports that must be
     launched. The list can be empty.
 
-    Throws EnvException.
+    Throws EnvError.
     """
 
     supportedTransportVersion = '1'
@@ -36,7 +36,7 @@ def init(supported_transports):
         config.writeVersion(supportedTransportVersion)
     else:
         config.writeVersionError()
-        raise EnvException("Unsupported managed proxy protocol version (%s)" %
+        raise EnvError("Unsupported managed proxy protocol version (%s)" %
                            str(config.getManagedTransportVersions()))
 
     retval = {}

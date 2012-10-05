@@ -3,7 +3,7 @@
 
 """ The pyptlib.util module contains useful functions that don't fit in anywhere else. """
 
-from pyptlib.config import Config, EnvException
+from pyptlib.config import Config, EnvError
 
 
 def checkClientMode():
@@ -12,7 +12,7 @@ def checkClientMode():
     try:
         c = Config()
         return c.checkClientMode()
-    except EnvException:
+    except EnvError:
         return False
 
 

@@ -52,14 +52,17 @@ class ServerConfig(config.Config):
         bindaddrs = self.get('TOR_PT_SERVER_BINDADDR').split(',')
         for bindaddr in bindaddrs:
             (transport_name, addrport) = bindaddr.split('-')
-            (addr, port) = get_addrport_from_string(addrport)
-            self.serverBindAddr[key] = (addr, port)
+            (addr, port) = self.get_addrport_from_string(addrport)
+            self.serverBindAddr[transport_name] = (addr, port)
 
         # Get transports.
         self.transports = self.get('TOR_PT_SERVER_TRANSPORTS').split(',')
         if '*' in self.transports:
             self.allTransportsEnabled = True
             self.transports.remove('*')
+
+        if sorted(self.transports) != sorted(self.serverBindAddr.keys()):
+            raise config.EnvError("Can't match transports with bind addresses (%s, %s)" % (self.transports, self.serverBindAddr.keys()))
 
     def getExtendedORPort(self):
         return self.extendedORPort

@@ -1,7 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-""" The pyptlib.easy.server module includes a convenient API for writing pluggable transport servers. """
+"""
+Public server-side pyptlib API.
+"""
 
 from pyptlib.config import EnvError
 from pyptlib.server_config import ServerConfig
@@ -9,30 +11,24 @@ from pyptlib.server_config import ServerConfig
 
 def init(supported_transports):
     """
-    Initialize the pluggable transport by parsing the environment
-    variables and generating output to report any errors.  The
-    given transports are checked against the transports enabled by
-    Tor and a dictionary containing information for the managed
-    proxy is returned.
+    Bootstrap server-side managed-proxy mode.
 
-    The dictionary contains the following keys and values:
+    *Call in the beginning of your application.*
 
-    'state_loc' : Directory where the managed proxy should dump its
-    state files (if needed).
+    :param list supported_transports: Names of the transports that the application supports.
 
-    'orport' : [<addr>, <port>] tuple containing the address and port
-    of Tor's ORPort.
+    :returns: dictionary that contains information for the application:
 
-    'ext_orport' : [<addr>, <port>] tuple containing the address and
-    port of Tor's Extended ORPort, or None if the Extended ORPort it's
-    not supported.
+	    ==========  ========== ==========
+	    Key         Type       Value
+	    ==========  ========== ==========
+	    state_loc   string     Directory where the managed proxy should dump its state files (if needed).
+	    orport      tuple      (ip,port) tuple pointing to Tor's ORPort.
+	    ext_orport  tuple      (ip,port) tuple pointing to Tor's Extended ORPort. None if Extended ORPort is not supported.
+	    transports  dict       A dictionary 'transport => (ip,port)' where 'transport' is the name of the transport that should be spawned, and '(ip,port)' is the location where the transport should bind. The dictionary can be empty.
+	    ==========  ========== ==========
 
-    'transports' : A dictionary {<transport> : [<addr>, <port>]},
-    where <transport> is the name of the transport that must be
-    spawned, and [<addr>, <port>] is a list containing the location
-    where that transport should bind. The dictionary can be empty.
-
-    Throws EnvError.
+    :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
     """
 
     supportedTransportVersion = '1'
@@ -50,16 +46,59 @@ def init(supported_transports):
     retval['state_loc'] = config.getStateLocation()
     retval['orport'] = config.getORPort()
     retval['ext_orport'] = config.getExtendedORPort()
-    retval['transports'] = getTransportsDict(supported_transports, config)
+    retval['transports'] = _getTransportsDict(supported_transports, config)
 
     return retval
 
-def getTransportsDict(supported_transports, config):
+def reportSuccess(name, addrport, options):
     """
-    Given the transport names that the managed proxy support in
-    'transports', and Tor's configuration in 'config', figure out
-    which transports Tor wants us to spawn and create the appropriate
-    dictionary.
+    Report that a server transport was launched succesfully.
+
+    *Always call after successfully launching a transport.*
+
+    :param str name: Name of transport.
+    :param tuple addrport: (addr,port) where this transport is listening for connections.
+    :param str options: Transport options.
+    """
+
+    config = ServerConfig()
+    config.writeMethod(name, addrport, options)
+
+
+def reportFailure(name, message):
+    """
+    Report that a server transport failed to launch.
+
+    *Always call after failing to launch a transport.*
+
+    :param str name: Name of transport.
+    :param str message: Error message.
+    """
+
+    config = ServerConfig()
+    config.writeMethodError(name, message)
+
+
+def reportEnd():
+    """
+    Report that we are done launching transports.
+
+    *Call after you have launched all the transports you could launch.*
+    """
+
+    config = ServerConfig()
+    config.writeMethodEnd()
+
+def _getTransportsDict(supported_transports, config):
+    """
+    Figure out which transports the application should launch, based on
+    the transports it supports and on the transports that Tor wants it
+    to spawn.
+
+    :param list supported_transports: Transports that the application supports.
+    :param :class:`pyptlib.client_config.ClientConfig` config: Configuration of Tor.
+
+    :returns: A dictionary of 'transport => bind address' of transports that the application should launch.
     """
     transports = {}
 
@@ -76,34 +115,3 @@ def getTransportsDict(supported_transports, config):
             config.writeMethodError(transport, "not supported")
 
     return transports
-
-def reportSuccess(name, address, options):
-    """
-        This method should be called to report when a transport has been successfully launched.
-        It generates output to Tor informing that the transport launched successfully and can be used.
-        After all transports have been launched, the server should call reportEnd().
-    """
-
-    config = ServerConfig()
-    config.writeMethod(name, address, options)
-
-
-def reportFailure(name, message):
-    """
-        This method should be called to report when a transport has failed to launch.
-        It generates output to Tor informing that the transport failed to launch and cannot be used.
-        After all transports have been launched, the server should call reportEnd().
-    """
-
-    config = ServerConfig()
-    config.writeMethodError(name, message)
-
-
-def reportEnd():
-    """
-        This method should be called after all transports have been launched.
-        It generates output to Tor informing that all transports have been launched.
-    """
-
-    config = ServerConfig()
-    config.writeMethodEnd()

@@ -2,19 +2,21 @@
 # -*- coding: utf-8 -*-
 
 """
-This module contains parts of the managed proxy specification which
-are shared by both client and server implementations of the protocol.
+Parts of pyptlib that are useful both to clients and servers.
 """
 
 import os, sys
 
-__docformat__ = 'restructuredtext'
-
-class Config:
-
+class Config(object):
     """
-    The Config module class a low-level API which closely follows the Tor Proposal 180: Pluggable transports for circumvention.
-    This class contains the parts of the API which are shared by both client and server implementations of the protocol.
+    pyptlib's configuration.
+
+    :var string stateLocation: Location where application should store state.
+    :var list managedTransportVer: List of managed-proxy protocol versions that Tor supports.
+    :var list transports: Strings of pluggable transport names that Tor wants us to handle.
+    :var bool allTransportsEnabled: True if Tor wants us to spawn all the transports.
+
+    :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
     """
 
     stateLocation = None  # TOR_PT_STATE_LOCATION
@@ -22,87 +24,111 @@ class Config:
     transports = []  # TOR_PT_SERVER_TRANSPORTS or TOR_PT_CLIENT_TRANSPORTS
     allTransportsEnabled = False
 
-  # Public methods
-
     def __init__(self):
-        """
-        Initialize the Config object. this causes the state location
-        and managed transport version to be set.
-
-        Throws EnvError.
-        """
-
         self.stateLocation = self.get('TOR_PT_STATE_LOCATION')
         self.managedTransportVer = self.get('TOR_PT_MANAGED_TRANSPORT_VER').split(',')
 
     def checkClientMode(self):
-        """ Check to see if the daemon is being run as a client or a server. This is determined by looking for the presence of the TOR_PT_CLIENT_TRANSPORTS environment variable. """
+        """
+        Check whether Tor wants us to run as a client or as a server.
+
+        :returns: bool -- True if Tor wants us to run as a client.
+        """
 
         return self.check('TOR_PT_CLIENT_TRANSPORTS')
 
     def getStateLocation(self):
-        """ Return the state location, a string representing the path to the state storage directory (which may not exist, but should be creatable) reported by Tor. """
+        """
+        :returns: string -- The state location.
+        """
 
         return self.stateLocation
 
     def getManagedTransportVersions(self):
-        """ Return the managed transport versions, a list of strings representing supported versions as reported by Tor. """
+        """
+        :returns: list -- The managed-proxy protocol versions that Tor supports.
+        """
 
         return self.managedTransportVer
 
     def checkManagedTransportVersion(self, version):
         """
-            Checks to see if the specified version is included in those reported by Tor
-            Returns True if the version is included and False if it is not
+        Check if Tor supports a specific managed-proxy protocol version.
+
+        :param string version: A managed-proxy protocol version.
+
+        :returns: bool -- True if version is supported.
         """
 
         return version in self.managedTransportVer
 
     def getAllTransportsEnabled(self):
-        """ Returns a bool, True if the transport '*' was specified by Tor, otherwise False. """
+        """
+        Check if Tor wants the application to spawn all its transpotrs.
+
+        :returns: bool -- True if Tor wants the application to spawn all its transports.
+        """
 
         return self.allTransportsEnabled
 
     def checkTransportEnabled(self, transport):
-        """ Returns a bool, True if either the given transport or the transport '*' was specified by Tor, otherwise False. """
+        """
+        Check if Tor wants the application to spawn a specific transport.
+
+        :param string transport: The name of a pluggable transport.
+
+        :returns: bool -- True if Tor wants the application to spawn that transport.
+        """
 
         return self.allTransportsEnabled or transport in self.transports
 
     def writeEnvError(self, message):  # ENV-ERROR
         """
-            Write a message to stdout specifying that an error parsing the environment variables has occurred
-            Takes: str
+        Announce that an error occured while parsing the environment.
+
+        :param str message: Error message.
         """
 
         self.emit('ENV-ERROR %s' % message)
 
     def writeVersion(self, version):  # VERSION
         """
-            Write a message to stdout specifying that the specified configuration protocol version is supported
-            Takes: str
+        Announce that a specific managed-proxy protocol version is supported.
+
+        :param str version: A managed-proxy protocol version.
         """
 
         self.emit('VERSION %s' % version)
 
     def writeVersionError(self):  # VERSION-ERROR
         """
-            Write a message to stdout specifying that none of the specified configuration protocol versions are supported
+        Announce that we could not find a supported managed-proxy
+        protocol version.
         """
 
         self.emit('VERSION-ERROR no-version')
 
- # Private methods
-
     def check(self, key):
-        """ Returns True if the specified environment variable is set, otherwise returns False. """
+        """
+        Check the environment for a specific environment variable.
+
+        :param str key: Environment variable key.
+
+        :returns: bool -- True if the environment variable is set.
+        """
 
         return key in os.environ
 
     def get(self, key):
         """
-        Attempts to fetch the given key from the environment
-        variables. If it is present, it is returned, otherwise an
-        EnvError is thrown.
+        Get the value of an environment variable.
+
+        :param str key: Environment variable key.
+
+        :returns: str -- The value of the envrionment variable.
+
+        :raises: :class:`pyptlib.config.EnvError` if environment
+        variable could not be found.
         """
 
         if key in os.environ:
@@ -113,12 +139,16 @@ class Config:
             raise EnvError(message)
 
     def emit(self, msg):
+        """
+        Announce a message.
+
+        :param str msg: A message.
+        """
+
         print msg
         sys.stdout.flush()
 
-
 """
-Exception thrown when there is an error parsing managed proxy
-environment variables. Also sends an ENV-ERROR to Tor.
+Exception thrown when the environment is incomplete or corrupted.
 """
 class EnvError(Exception): pass

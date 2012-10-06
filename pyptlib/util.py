@@ -1,14 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-""" The pyptlib.util module contains useful functions that don't fit in anywhere else. """
+"""
+Utility functions.
+"""
 
 from pyptlib.config import Config, EnvError
 
+def checkClientMode(): # XXX WTF!???! This also exists in config.py.
+    """
+    Check whether Tor wants us to run as a client or as a server.
 
-def checkClientMode():
-    """ Checks to see if the daemon has been launched in client mode or server mode. Returns True if it is in client mode, otherwise False. """
-
+    :returns: bool -- True if Tor wants us to run as a client.
+    """
     try:
         c = Config()
         return c.checkClientMode()

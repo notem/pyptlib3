@@ -2,35 +2,22 @@
 # -*- coding: utf-8 -*-
 
 """
-This module contains parts of the API that are only useful to servers.
+Low-level parts of pyptlib that are only useful to servers.
 """
 
 import pyptlib.config as config
 
 class ServerConfig(config.Config):
     """
-    Attributes:
+    A client-side pyptlib configuration.
 
-    self.transports: List with strings of pluggable transport names
-    that Tor wants us to handle.
+    :var tuple ORPort: (ip,port) pointing to Tor's ORPort.
+    :var tuple extendedORPort: (ip,port) pointing to Tor's Extended ORPort. None if Extended ORPort is not supported.
+    :var dict serverBindAddr: A dictionary {<transport> : [<addr>, <port>]}, where <transport> is the name of the transport that must be spawned, and [<addr>, <port>] is a list containing the location where that transport should bind. The dictionary can be empty.
 
-    self.allTransportsEnabled: True if Tor wants us to spawn all the
-    transports.
-
-    self.extendedORPort: '(<ip>,<port>)' tuple pointing to Tor's
-    Extended ORPort. 'None' if Extended ORPort is not supported.
-
-    self.serverBindAddr: A dictionary {<transport> : [<addr>, <port>]},
-    where <transport> is the name of the transport that must be
-    spawned, and [<addr>, <port>] is a list containing the location
-    where that transport should bind. The dictionary can be empty.
+    :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
     """
     def __init__(self):
-        """
-        Initializer.
-        Throws EnvError.
-        """
-
         config.Config.__init__(self)
 
         """
@@ -65,59 +52,88 @@ class ServerConfig(config.Config):
             raise config.EnvError("Can't match transports with bind addresses (%s, %s)" % (self.transports, self.serverBindAddr.keys()))
 
     def getExtendedORPort(self):
+        """
+        :returns: :attr:`pyptlib.server_config.ServerConfig.extendedORPort`
+        """
         return self.extendedORPort
 
     def getORPort(self):
+        """
+        :returns: :attr:`pyptlib.server_config.ServerConfig.ORPort`
+        """
         return self.ORPort
 
     def getServerBindAddresses(self):
+        """
+        :returns: :attr:`pyptlib.server_config.ServerConfig.serverBindAddr`
+        """
         return self.serverBindAddr
 
     def getServerTransports(self):
+        """
+        :returns: :attr:`pyptlib.config.Config.transports`
+        """
         return self.transports
 
-    def writeMethod(self, name, address, options):
+    def writeMethod(self, name, addrport, options):
         """
-        Write a message to stdout specifying a supported transport
-        Takes: str, (str, int), MethodOptions
+        Write a message to stdout announcing that a server transport was
+        successfully launched.
+
+        :param str name: Name of transport.
+        :param tuple addrport: (addr,port) where this transport is listening for connections.
+        :param str options: Transport options.
         """
 
         if options:
-            self.emit('SMETHOD %s %s:%s %s' % (name, address[0],
-                      address[1], options))
+            self.emit('SMETHOD %s %s:%s %s' % (name, addrport[0],
+                      addrport[1], options))
         else:
-            self.emit('SMETHOD %s %s:%s' % (name, address[0],
-                      address[1]))
+            self.emit('SMETHOD %s %s:%s' % (name, addrport[0],
+                      addrport[1]))
 
     def writeMethodError(self, name, message):  # SMETHOD-ERROR
         """
-            Write a message to stdout specifying that an error occurred setting up the specified method
-            Takes: str, str
+        Write a message to stdout announcing that we failed to launch
+        a transport.
+
+        :param str name: Name of transport.
+        :param str message: Error message.
         """
 
         self.emit('SMETHOD-ERROR %s %s' % (name, message))
 
     def writeMethodEnd(self):  # SMETHODS DONE
-        """ Write a message to stdout specifying that the list of supported transports has ended """
+        """
+        Write a message to stdout announcing that we finished
+        launching transports..
+        """
 
         self.emit('SMETHODS DONE')
 
     def get_addrport(self, key):
         """
-        Given an environment variable name in 'key' with an
-        '<addr>:<port>' value, return [<addr>,<port>].
+        Parse an environment variable holding an address:port value.
 
-        Throws EnvError.
+        :param str key: Environment variable key.
+
+        :returns: tuple -- (address,port)
+
+        :raises: :class:`pyptlib.config.EnvError` if string was not in address:port format.
         """
+
         string = self.get(key)
         return self.get_addrport_from_string(string)
 
     def get_addrport_from_string(self, string):
         """
-        Given a string in 'string' with an '<addr>:<port>' value,
-        return [<addr>,<port>].
+        Parse a string holding an address:port value.
 
-        Throws EnvError.
+        :param str string: A string.
+
+        :returns: tuple -- (address,port)
+
+        :raises: :class:`pyptlib.config.EnvError` if string was not in address:port format.
         """
 
         addrport = string.split(':')
@@ -125,7 +141,7 @@ class ServerConfig(config.Config):
         if (len(addrport) != 2) or (not addrport[1].isdigit()):
             message = 'Parsing error (%s).' % (string)
             self.writeEnvError(message)
-            raise config.EnvError(message)
+            raise config.EnvError(message) # XXX maybe return ValueError
 
         if (not 0 <= int(addrport[1]) < 65536):
             message = 'Port out of range (%s).' % (string)
@@ -133,61 +149,4 @@ class ServerConfig(config.Config):
             raise config.EnvError(message)
 
         return addrport
-
-class MethodOptions:
-
-    """ The MethodOptions class represents the method options: FORWARD, ARGS, DECLARE, and USE-EXTENDED-PORT. """
-
-    forward = False  # FORWARD
-    args = {}  # ARGS
-    declare = {}  # DECLARE
-    useExtendedPort = False  # USE-EXTENDED-PORT
-
-  # Public methods
-
-    def setForward(self):
-        """ Sets forward to True """
-
-        self.forward = True
-
-    def addArg(self, key, value):
-        """ Adds a key-value pair to args """
-
-        self.args[key] = value
-
-    def addDeclare(self, key, value):
-        """ Adds a key-value pair to declare """
-
-        self.declare[key] = value
-
-    def setUserExtendedPort(self):
-        """ Sets useExtendedPort to True """
-
-        self.useExtendedPort = True
-
-    def __str__(self):
-        """ Returns a string representation of the method options. """
-
-        options = []
-        if self.forward:
-            options.append('FORWARD:1')
-        if len(self.args) > 0:
-            argstr = 'ARGS:'
-            for key in self.args:
-                value = self.args[key]
-                argstr = argstr + key + '=' + value + ','
-            argstr = argstr[:-1]  # Remove trailing comma
-            options.append(argstr)
-        if len(self.declare) > 0:
-            decs = 'DECLARE:'
-            for key in self.declare:
-                value = self.declare[key]
-                decs = decs + key + '=' + value + ','
-            decs = decs[:-1]  # Remove trailing comma
-            options.append(decs)
-        if self.useExtendedPort:
-            options.append('USE-EXTENDED-PORT:1')
-
-        return ' '.join(options)
-
 

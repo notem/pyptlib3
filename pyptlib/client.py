@@ -2,30 +2,30 @@
 # -*- coding: utf-8 -*-
 
 """
-This module provides a convenient API for writing pluggable transport clients.
+Public client-side pyptlib API.
 """
 
 from pyptlib.config import EnvError
 from pyptlib.client_config import ClientConfig
 
-
 def init(supported_transports):
     """
-    Initialize the pluggable transport by parsing the environment
-    variables and generating output to report any errors.  The given
-    transports are checked against the transports enabled by a
-    dictionary containing information for the managed proxy is
-    returned.
+    Bootstrap client-side managed-proxy mode.
 
-    The dictionary contains the following keys and values:
+    *Call in the beginning of your application.*
 
-    'state_loc' : Directory where the managed proxy should dump its
-    state files (if needed).
+    :param list supported_transports: Names of the transports that the application supports.
 
-    'transports' : The names of the transports that must be
-    launched. The list can be empty.
+    :returns: dictionary that contains information for the application.
 
-    Throws EnvError.
+	    ==========  ========== ==========
+	    Key         Type       Value
+	    ==========  ========== ==========
+	    state_loc   string     Directory where the managed proxy should dump its state files (if needed).
+	    transports  list       Strings of the names of the transports that should be launched. The list can be empty.
+	    ==========  ========== ==========
+
+    :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
     """
 
     supportedTransportVersion = '1'
@@ -41,11 +41,62 @@ def init(supported_transports):
 
     retval = {}
     retval['state_loc'] = config.getStateLocation()
-    retval['transports'] = getTransportsList(supported_transports, config)
+    retval['transports'] = _getTransportsList(supported_transports, config)
 
     return retval
 
-def getTransportsList(supported_transports, config):
+def reportSuccess(name, socksVersion, addrport, args=None, optArgs=None):
+    """
+    Report that a client transport was launched succesfully.
+
+    *Always call after successfully launching a transport.*
+
+    :param str name: Name of transport.
+    :param int socksVersion: The SOCKS protocol version.
+    :param tuple addrport: (addr,port) where this transport is listening for connections.
+    :param str args: ARGS field for this transport.
+    :param str args: OPT-ARGS field for this transport.
+    """
+
+    config = ClientConfig()
+    config.writeMethod(name, socksVersion, addrport, args, optArgs)
+
+
+def reportFailure(name, message):
+    """
+    Report that a client transport failed to launch.
+
+    *Always call after failing to launch a transport.*
+
+    :param str name: Name of transport.
+    :param str message: Error message.
+    """
+
+    config = ClientConfig()
+    config.writeMethodError(name, message)
+
+
+def reportEnd():
+    """
+    Report that we are done launching transports.
+
+    *Call after you have launched all the transports you could launch.*
+    """
+
+    config = ClientConfig()
+    config.writeMethodEnd()
+
+def _getTransportsList(supported_transports, config):
+    """
+    Figure out which transports the application should launch, based on
+    the transports it supports and on the transports that Tor wants it
+    to spawn.
+
+    :param list supported_transports: Transports that the application supports.
+    :param :class:`pyptlib.client_config.ClientConfig` config: Configuration of Tor.
+
+    :returns: A list of transports that the application should launch.
+    """
     transports = []
 
     if config.getAllTransportsEnabled():
@@ -57,37 +108,5 @@ def getTransportsList(supported_transports, config):
         else:
             config.writeMethodError(transport, "not supported")
 
-    return transports
-
-def reportSuccess(name, socksVersion, address, args, optArgs):
-    """
-        This method should be called to report when a transport has been successfully launched.
-        It generates output to Tor informing that the transport launched successfully and can be used.
-        After all transports have been launched, the client should call reportEnd().
-    """
-
-    config = ClientConfig()
-    config.writeMethod(name, socksVersion, address, args, optArgs)
-
-
-def reportFailure(name, message):
-    """
-        This method should be called to report when a transport has failed to launch.
-        It generates output to Tor informing that the transport failed to launch and cannot be used.
-        After all transports have been launched, the client should call reportEnd().
-    """
-
-    config = ClientConfig()
-    config.writeMethodError(name, message)
-
-
-def reportEnd():
-    """
-        This method should be called after all transports have been launched.
-        It generates output to Tor informing that all transports have been launched.
-    """
-
-    config = ClientConfig()
-    config.writeMethodEnd()
-
+    return transport
 

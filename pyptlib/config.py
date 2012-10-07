@@ -148,7 +148,8 @@ class Config(object):
         print msg
         sys.stdout.flush()
 
-"""
-Exception thrown when the environment is incomplete or corrupted.
-"""
-class EnvError(Exception): pass
+class EnvError(Exception):
+    """
+    Thrown when the environment is incomplete or corrupted.
+    """
+    pass

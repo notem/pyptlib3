@@ -6,9 +6,16 @@
 Welcome to pyptlib!
 ===================================
 
-pyptlib is a little Python library which understands the 'pluggable
-transport managed-proxy protocol'.
+pyptlib is a little Python library that makes the job of writing
+pluggable transports easier.
 
+
+.. toctree::
+   :maxdepth: 2
+
+   README
+   API
+   glossary
 
 :mod:`pyptlib.client`
 ----------------------
@@ -21,8 +28,11 @@ Client-side pyptlib API.
 
 Server-side pyptlib API.
 
-.. toctree::
-   :maxdepth: 2
+:mod:`pyptlib.util`
+----------------------
+
+pyptlib utilities.
+
 
 Indices and tables
 ==================

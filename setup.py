@@ -24,6 +24,6 @@ setup(name='pyptlib',
       ],
       keywords='cryptography privacy internet',
       license='BSD',
-      package_dir={'pyptlib': 'pyptlib/'},
+      package_dir={'pyptlib': 'pyptlib'},
       packages=['pyptlib'],
      )

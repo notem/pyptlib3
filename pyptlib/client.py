@@ -108,5 +108,5 @@ def _getTransportsList(supported_transports, config):
         else:
             config.writeMethodError(transport, "not supported")
 
-    return transport
+    return transports
 

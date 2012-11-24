@@ -101,14 +101,15 @@ Server case (skip if you are a client):
 If your application is a server, the return value of
 :func:`pyptlib.server.init` is a dictionary of the format:
 
-==========  ========== ==========
-Key         Type       Value
-==========  ========== ==========
-state_loc   string     Directory where the managed proxy should dump its state files (if needed).
-orport      tuple      (ip,port) tuple pointing to Tor's ORPort.
-ext_orport  tuple      (ip,port) tuple pointing to Tor's Extended ORPort. None if Extended ORPort is not supported.
-transports  dict       A dictionary 'transport => (ip,port)' where 'transport' is the name of the transport that should be spawned, and '(ip,port)' is the location where the transport should bind. The dictionary can be empty.
-==========  ========== ==========
+===============   ========== ==========
+Key               Type       Value
+================  ========== ==========
+state_loc         string     Directory where the managed proxy should dump its state files (if needed).
+orport            tuple      (ip,port) tuple pointing to Tor's ORPort.
+ext_orport        tuple      (ip,port) tuple pointing to Tor's Extended ORPort. None if Extended ORPort is not supported.
+transports        dict       A dictionary 'transport => (ip,port)' where 'transport' is the name of the transport that should be spawned, and '(ip,port)' is the location where the transport should bind. The dictionary can be empty.
+auth_cookie_file  string     Directory where the managed proxy should find the Extended ORPort authentication cookie.
+================  ========== ==========
 
 Your application should then use the *transports* key and attempt to
 launch the appropriate transports. Furthermore, since the application

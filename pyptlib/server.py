@@ -19,14 +19,15 @@ def init(supported_transports):
 
     :returns: dictionary that contains information for the application:
 
-	    ==========  ========== ==========
-	    Key         Type       Value
-	    ==========  ========== ==========
-	    state_loc   string     Directory where the managed proxy should dump its state files (if needed).
-	    orport      tuple      (ip,port) tuple pointing to Tor's ORPort.
-	    ext_orport  tuple      (ip,port) tuple pointing to Tor's Extended ORPort. None if Extended ORPort is not supported.
-	    transports  dict       A dictionary 'transport => (ip,port)' where 'transport' is the name of the transport that should be spawned, and '(ip,port)' is the location where the transport should bind. The dictionary can be empty.
-	    ==========  ========== ==========
+	    ===============   ========== ==========
+	    Key               Type       Value
+	    ================  ========== ==========
+	    state_loc         string     Directory where the managed proxy should dump its state files (if needed).
+	    orport            tuple      (ip,port) tuple pointing to Tor's ORPort.
+	    ext_orport        tuple      (ip,port) tuple pointing to Tor's Extended ORPort. None if Extended ORPort is not supported.
+	    transports        dict       A dictionary 'transport => (ip,port)' where 'transport' is the name of the transport that should be spawned, and '(ip,port)' is the location where the transport should bind. The dictionary can be empty.
+            auth_cookie_file  string     Directory where the managed proxy should find the Extended ORPort authentication cookie.
+	    ================  ========== ==========
 
     :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
     """
@@ -47,6 +48,7 @@ def init(supported_transports):
     retval['orport'] = config.getORPort()
     retval['ext_orport'] = config.getExtendedORPort()
     retval['transports'] = _getTransportsDict(supported_transports, config)
+    retval['auth_cookie_file'] = config.getAuthCookieFile()
 
     return retval
 

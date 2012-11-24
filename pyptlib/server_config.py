@@ -14,6 +14,7 @@ class ServerConfig(config.Config):
     :var tuple ORPort: (ip,port) pointing to Tor's ORPort.
     :var tuple extendedORPort: (ip,port) pointing to Tor's Extended ORPort. None if Extended ORPort is not supported.
     :var dict serverBindAddr: A dictionary {<transport> : [<addr>, <port>]}, where <transport> is the name of the transport that must be spawned, and [<addr>, <port>] is a list containing the location where that transport should bind. The dictionary can be empty.
+    :var string authCookieFile: String representing the filesystem path where the Extended ORPort Authentication cookie is stored. None if Extended ORPort authentication is not supported.
 
     :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
     """
@@ -30,6 +31,18 @@ class ServerConfig(config.Config):
             self.extendedORPort = None
         else:
             self.extendedORPort = self.get_addrport('TOR_PT_EXTENDED_SERVER_PORT')
+
+        if self.check('TOR_PT_AUTH_COOKIE_FILE'):
+            self.authCookieFile = self.get('TOR_PT_AUTH_COOKIE_FILE')
+        else:
+            self.authCookieFile = None
+
+        # Check that either both Extended ORPort and the Extended
+        # ORPort Authentication Cookie are present, or neither.
+        if self.extendedORPort and not self.authCookieFile:
+            raise config.EnvError("Extended ORPort address provided, but no cookie file.")
+        elif self.authCookieFile and not self.extendedORPort:
+            raise config.EnvError("Extended ORPort Authentication cookie file provided, but no Extended ORPort address.")
 
         # Get ORPort.
         self.ORPort = self.get_addrport('TOR_PT_ORPORT')
@@ -74,6 +87,12 @@ class ServerConfig(config.Config):
         :returns: :attr:`pyptlib.config.Config.transports`
         """
         return self.transports
+
+    def getAuthCookieFile(self):
+        """
+        :returns: :attr:`pyptlib.server_config.ServerConfig.authCookieFile`
+        """
+        return self.authCookieFile
 
     def writeMethod(self, name, addrport, options):
         """

@@ -40,9 +40,13 @@ class ServerConfig(config.Config):
         # Check that either both Extended ORPort and the Extended
         # ORPort Authentication Cookie are present, or neither.
         if self.extendedORPort and not self.authCookieFile:
-            raise config.EnvError("Extended ORPort address provided, but no cookie file.")
+            err = "Extended ORPort address provided, but no cookie file."
+            self.writeEnvError(err)
+            raise config.EnvError(err)
         elif self.authCookieFile and not self.extendedORPort:
-            raise config.EnvError("Extended ORPort Authentication cookie file provided, but no Extended ORPort address.")
+            err = "Extended ORPort Authentication cookie file provided, but no Extended ORPort address."
+            self.writeEnvError(err)
+            raise config.EnvError(err)
 
         # Get ORPort.
         self.ORPort = self.get_addrport('TOR_PT_ORPORT')
@@ -62,7 +66,9 @@ class ServerConfig(config.Config):
             self.transports.remove('*')
 
         if sorted(self.transports) != sorted(self.serverBindAddr.keys()):
-            raise config.EnvError("Can't match transports with bind addresses (%s, %s)" % (self.transports, self.serverBindAddr.keys()))
+            err = "Can't match transports with bind addresses (%s, %s)" % (self.transports, self.serverBindAddr.keys())
+            self.writeEnvError(err)
+            raise config.EnvError(err)
 
     def getExtendedORPort(self):
         """

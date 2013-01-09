@@ -105,8 +105,6 @@ def _getTransportsList(supported_transports, config):
     for transport in config.getClientTransports():
         if transport in supported_transports:
             transports.append(transport)
-        else:
-            config.writeMethodError(transport, "not supported")
 
     return transports
 

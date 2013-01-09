@@ -111,9 +111,5 @@ def _getTransportsDict(supported_transports, config):
         if transport in supported_transports:
             assert(transport in config.getServerBindAddresses())
             transports[transport] = config.getServerBindAddresses()[transport]
-        else:
-            # Issue SMETHOD-ERROR when Tor asks us to spawn a
-            # transport that we do not support.
-            config.writeMethodError(transport, "not supported")
 
     return transports

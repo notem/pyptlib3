@@ -6,6 +6,7 @@ Low-level parts of pyptlib that are only useful to servers.
 """
 
 import pyptlib.config as config
+import pyptlib.util as util
 
 class ServerConfig(config.Config):
     """
@@ -56,7 +57,13 @@ class ServerConfig(config.Config):
         bindaddrs = self.get('TOR_PT_SERVER_BINDADDR').split(',')
         for bindaddr in bindaddrs:
             (transport_name, addrport) = bindaddr.split('-')
-            (addr, port) = self.get_addrport_from_string(addrport)
+
+            try:
+                (addr, port) = util.parse_addr_spec(addrport)
+            except ValueError, err:
+                self.writeEnvError(err)
+                raise config.EnvError(err)
+
             self.serverBindAddr[transport_name] = (addr, port)
 
         # Get transports.
@@ -148,30 +155,9 @@ class ServerConfig(config.Config):
         """
 
         string = self.get(key)
-        return self.get_addrport_from_string(string)
-
-    def get_addrport_from_string(self, string):
-        """
-        Parse a string holding an address:port value.
-
-        :param str string: A string.
-
-        :returns: tuple -- (address,port)
-
-        :raises: :class:`pyptlib.config.EnvError` if string was not in address:port format.
-        """
-
-        addrport = string.split(':')
-
-        if (len(addrport) != 2) or (not addrport[1].isdigit()):
-            message = 'Parsing error (%s).' % (string)
-            self.writeEnvError(message)
-            raise config.EnvError(message) # XXX maybe return ValueError
-
-        if (not 0 <= int(addrport[1]) < 65536):
-            message = 'Port out of range (%s).' % (string)
-            self.writeEnvError(message)
-            raise config.EnvError(message)
-
-        return addrport
+        try:
+            return util.parse_addr_spec(string)
+        except ValueError, err:
+            self.writeEnvError(err)
+            raise config.EnvError(err)
 

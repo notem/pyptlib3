@@ -176,7 +176,7 @@ class testServer(unittest.TestCase):
         os.environ = TEST_ENVIRON
         retval = pyptlib.server.init(["what"])
         self.assertEquals(retval['auth_cookie_file'], '/lulzie')
-        self.assertEquals(retval['ext_orport'], ['127.0.0.1', '5555'])
+        self.assertEquals(retval['ext_orport'], ('127.0.0.1', 5555))
 
     def test_ext_or_but_no_auth_cookie(self):
         """TOR_PT_EXTENDED_SERVER_PORT without TOR_PT_AUTH_COOKIE_FILE."""

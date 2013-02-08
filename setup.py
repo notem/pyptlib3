@@ -5,12 +5,11 @@ import sys
 from setuptools import setup
 
 setup(name='pyptlib',
-      version='0.1',
+      version='0.0.1',
       description='A python implementation of the Pluggable Transports for Circumvention specification for Tor',
       long_description='A python implementation of the Pluggable Transports for Circumvention specification for Tor',
-      author='Brandon Wiley',
-      author_email='brandon@blanu.net',
-      url='http://stepthreeprivacy.org/',
+      author='asn, Brandon Wiley',
+      author_email='asn@torproject.org, brandon@blanu.net',
       classifiers=[
 	"Development Status :: 3 - Alpha",
     	"Environment :: No Input/Output (Daemon)",

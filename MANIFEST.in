@@ -6,3 +6,4 @@ include TODO
 include README.rst
 include LICENSE
 include INSTALL
+include ChangeLog

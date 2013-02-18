@@ -1,9 +1,9 @@
 recursive-include doc *
 recursive-include examples *
-recursive-include pyptlib *
+recursive-include pyptlib *.py
 recursive-include sphinx *
+global-exclude *.pyc
 include TODO
 include README.rst
 include LICENSE
-include INSTALL
 include ChangeLog

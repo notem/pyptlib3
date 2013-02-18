@@ -5,7 +5,7 @@ import sys
 from setuptools import setup
 
 setup(name='pyptlib',
-      version='0.0.2',
+      version='0.0.3',
       description='A python implementation of the Pluggable Transports for Circumvention specification for Tor',
       long_description='A python implementation of the Pluggable Transports for Circumvention specification for Tor',
       author='asn, Brandon Wiley',

@@ -2,7 +2,7 @@
 
 import sys
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(name='pyptlib',
       version='0.0.3',
@@ -24,5 +24,5 @@ setup(name='pyptlib',
       keywords='cryptography privacy internet',
       license='BSD',
       package_dir={'pyptlib': 'pyptlib'},
-      packages=['pyptlib'],
+      packages=find_packages(),
      )

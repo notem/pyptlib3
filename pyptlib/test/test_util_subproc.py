@@ -4,7 +4,7 @@ import signal
 import subprocess
 import time
 
-from pyptlib.util.subproc import auto_killall, create_sink, Popen, SINK
+from pyptlib.util.subproc import auto_killall, create_sink, proc_is_alive, Popen, SINK
 from subprocess import PIPE
 
 # We ought to run auto_killall(), instead of manually calling proc.terminate()
@@ -13,11 +13,6 @@ from subprocess import PIPE
 def proc_wait(proc, wait_s):
     time.sleep(wait_s)
     proc.poll() # otherwise it doesn't exit properly
-
-def proc_is_alive(pid):
-    r = subprocess.call(("ps -p %s" % pid).split(), stdout=create_sink())
-    return True if r == 0 else False
-
 
 class SubprocTest(unittest.TestCase):
 

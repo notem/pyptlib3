@@ -9,7 +9,10 @@ import inspect
 import os
 import signal
 import subprocess
+import sys
 import time
+
+mswindows = (sys.platform == "win32")
 
 _CHILD_PROCS = []
 # TODO(infinity0): add functionality to detect when any child dies, and
@@ -46,6 +49,52 @@ class Popen(subprocess.Popen):
 
 def create_sink():
     return open(os.devnull, "w", 0)
+
+
+if mswindows:
+    # from http://www.madebuild.org/blog/?p=30
+    from ctypes import byref, windll
+    from ctypes.wintypes import DWORD
+
+    # GetExitCodeProcess uses a special exit code to indicate that the process is
+    # still running.
+    _STILL_ACTIVE = 259
+
+    def proc_is_alive(pid):
+        """Check if a pid is still running."""
+
+        handle = windll.kernel32.OpenProcess(1, 0, pid)
+        if handle == 0:
+            return False
+
+        # If the process exited recently, a pid may still exist for the handle.
+        # So, check if we can get the exit code.
+        exit_code = DWORD()
+        is_running = (
+            windll.kernel32.GetExitCodeProcess(handle, byref(exit_code)) == 0)
+        windll.kernel32.CloseHandle(handle)
+
+        # See if we couldn't get the exit code or the exit code indicates that the
+        # process is still running.
+        return is_running or exit_code.value == _STILL_ACTIVE
+
+else:
+    # adapted from http://stackoverflow.com/questions/568271/check-if-pid-is-not-in-use-in-python
+    import errno
+
+    def proc_is_alive(pid):
+        """Check if a pid is still running."""
+        try:
+            os.kill(pid, 0)
+        except OSError as e:
+            if e.errno == errno.EPERM:
+                return True
+            if e.errno == errno.ESRCH:
+                return False
+            raise # something else went wrong
+        else:
+            return True
+
 
 _SIGINT_RUN = {}
 def trap_sigint(handler, ignoreNum=0):
@@ -86,6 +135,7 @@ def _run_sigint_handlers(signum=0, sframe=None):
 
     if exc_info is not None:
         raise exc_info[0], exc_info[1], exc_info[2]
+
 
 _isTerminating = False
 def killall(wait_s=16):

@@ -10,10 +10,6 @@ from subprocess import PIPE
 # We ought to run auto_killall(), instead of manually calling proc.terminate()
 # but it's not very good form to use something inside the test for itself. :p
 
-def get_child_pids(pid):
-    # TODO(infinity0): add windows version
-    return subprocess.check_output(("ps h --ppid %s -o pid" % pid).split()).split()
-
 def proc_wait(proc, wait_s):
     time.sleep(wait_s)
     proc.poll() # otherwise it doesn't exit properly
@@ -31,16 +27,16 @@ class SubprocTest(unittest.TestCase):
     def getMainArgs(self):
         return ["python", "./util_subproc_main.py", self.name()]
 
-    def spawnMain(self, cmd=None, *args, **kwargs):
+    def spawnMain(self, cmd=None, stdout=PIPE, **kwargs):
         # spawn the main test process and wait a bit for it to initialise
-        proc = Popen(cmd or self.getMainArgs(), *args, **kwargs)
+        proc = Popen(cmd or self.getMainArgs(), stdout = stdout, **kwargs)
         time.sleep(0.2)
         return proc
 
-    def getOnlyChild(self, proc):
-        children = get_child_pids(proc.pid)
-        self.assertTrue(len(children) == 1)
-        return children[0]
+    def readChildPid(self, proc):
+        line = proc.stdout.readline()
+        self.assertTrue(line.startswith("child "))
+        return int(line.replace("child ", ""))
 
     def test_Popen_IOpassthru(self):
         output = subprocess.check_output(self.getMainArgs())
@@ -51,7 +47,7 @@ class SubprocTest(unittest.TestCase):
         self.assertTrue(len(output) == 0)
 
     def test_trap_sigint_multiple(self):
-        proc = self.spawnMain(stdout=PIPE)
+        proc = self.spawnMain()
         proc.send_signal(signal.SIGINT)
         self.assertEquals("run h1\n", proc.stdout.readline())
         proc.send_signal(signal.SIGINT)
@@ -60,7 +56,7 @@ class SubprocTest(unittest.TestCase):
         proc.terminate()
 
     def test_trap_sigint_reset(self):
-        proc = self.spawnMain(stdout=PIPE)
+        proc = self.spawnMain()
         proc.send_signal(signal.SIGINT)
         self.assertEquals("run h2\n", proc.stdout.readline())
         proc.terminate()
@@ -68,7 +64,7 @@ class SubprocTest(unittest.TestCase):
     def test_killall_kill(self):
         proc = self.spawnMain()
         pid = proc.pid
-        cid = self.getOnlyChild(proc)
+        cid = self.readChildPid(proc)
         self.assertTrue(proc_is_alive(cid), "child did not hang")
         time.sleep(2)
         self.assertTrue(proc_is_alive(cid), "child did not ignore TERM")
@@ -79,7 +75,7 @@ class SubprocTest(unittest.TestCase):
     def test_auto_killall_2_int(self):
         proc = self.spawnMain()
         pid = proc.pid
-        cid = self.getOnlyChild(proc)
+        cid = self.readChildPid(proc)
         # test first signal is ignored
         proc.send_signal(signal.SIGINT)
         proc_wait(proc, 3)
@@ -94,7 +90,7 @@ class SubprocTest(unittest.TestCase):
     def test_auto_killall_term(self):
         proc = self.spawnMain()
         pid = proc.pid
-        cid = self.getOnlyChild(proc)
+        cid = self.readChildPid(proc)
         # test TERM is handled
         proc.send_signal(signal.SIGTERM)
         proc_wait(proc, 3)
@@ -104,7 +100,7 @@ class SubprocTest(unittest.TestCase):
     def test_auto_killall_exit(self):
         proc = self.spawnMain()
         pid = proc.pid
-        cid = self.getOnlyChild(proc)
+        cid = self.readChildPid(proc)
         # test exit is handled. main exits by itself after 1 seconds
         # exit handler takes ~2s to run, usually
         proc_wait(proc, 3)

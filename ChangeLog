@@ -1,3 +1,9 @@
+Changes in version 0.0.4 - UNRELEASED
+ - Add a subprocess management module, which should make it easier to
+   write composed plugins such as obfs-flash, and the 2-INT termination
+   behaviour specified in the PT spec.
+
+
 Changes in version 0.0.3 - 2013-02-18
  - Restrict the MANIFEST.in file some more, so that no .pyc files
    sneak into the release tarballs.

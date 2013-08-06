@@ -9,12 +9,16 @@ from pyptlib.util.subproc import auto_killall, killall, trap_sigint, Popen, SINK
 from subprocess import PIPE
 
 
-def startChild(subcmd, stdout=SINK, **kwargs):
-    return Popen(
+def startChild(subcmd, report=False, stdout=SINK, **kwargs):
+    proc = Popen(
         ["python", "util_subproc_child.py", subcmd],
         stdout = stdout,
         **kwargs
     )
+    if report:
+        print "child %s" % proc.pid
+        sys.stdout.flush()
+    return proc
 
 def sleepIgnoreInts(ignoreNumInts=3):
     for i in xrange(ignoreNumInts):
@@ -48,24 +52,24 @@ def main_trap_sigint_reset(testname, *argv):
     sleepIgnoreInts(1)
 
 def main_killall_kill(testname, *argv):
-    child = startChild(testname)
+    child = startChild(testname, True)
     time.sleep(1)
     killall(4)
     time.sleep(100)
 
 def main_auto_killall_2_int(testname, *argv):
     auto_killall(1)
-    child = startChild("default")
+    child = startChild("default", True)
     child.wait()
 
 def main_auto_killall_term(testname, *argv):
     auto_killall()
-    child = startChild("default")
+    child = startChild("default", True)
     child.wait()
 
 def main_auto_killall_exit(testname, *argv):
     auto_killall()
-    child = startChild("default")
+    child = startChild("default", True)
     time.sleep(1)
 
 if __name__ == "__main__":

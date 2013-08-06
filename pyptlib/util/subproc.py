@@ -6,6 +6,7 @@ the Popen() here rather than subprocess.Popen() directly.
 
 import atexit
 import inspect
+import os
 import signal
 import subprocess
 import time
@@ -44,8 +45,7 @@ class Popen(subprocess.Popen):
     # use while/readline(); see man page for "python -u" for more details.
 
 def create_sink():
-    # TODO(infinity0): do a windows version of this
-    return open("/dev/null", "w", 0)
+    return open(os.devnull, "w", 0)
 
 _SIGINT_RUN = {}
 def trap_sigint(handler, ignoreNum=0):

@@ -15,16 +15,25 @@ _CHILD_PROCS = []
 # offer different response strategies for them (e.g. restart the child? or die
 # and kill the other children too).
 
+SINK = object()
+
 a = inspect.getargspec(subprocess.Popen.__init__)
 _Popen_defaults = zip(a.args[-len(a.defaults):],a.defaults); del a
 class Popen(subprocess.Popen):
     """Wrapper for subprocess.Popen that tracks every child process.
 
     See the subprocess module for documentation.
+
+    Additionally, you may use subproc.SINK as the value for either of the
+    stdout, stderr arguments to tell subprocess to discard anything written
+    to those channels.
     """
 
     def __init__(self, *args, **kwargs):
         kwargs = dict(_Popen_defaults + kwargs.items())
+        for f in ['stdout', 'stderr']:
+            if kwargs[f] is SINK:
+                kwargs[f] = create_sink()
         # super() does some magic that makes **kwargs not work, so just call
         # our super-constructor directly
         subprocess.Popen.__init__(self, *args, **kwargs)
@@ -34,15 +43,26 @@ class Popen(subprocess.Popen):
     # that don't buffer readlines() et. al. Currently one must avoid these and
     # use while/readline(); see man page for "python -u" for more details.
 
+def create_sink():
+    # TODO(infinity0): do a windows version of this
+    return open("/dev/null", "w", 0)
+
 _SIGINT_RUN = {}
 def trap_sigint(handler, ignoreNum=0):
     """Register a handler for an INT signal.
+
+    Successive traps registered via this function are cumulative, and override
+    any previous handlers registered using signal.signal(). To reset these
+    cumulative traps, call signal.signal() with another (maybe dummy) handler.
 
     Args:
         handler: a signal handler; see signal.signal() for details
         ignoreNum: number of signals to ignore before activating the handler,
             which will be run on all subsequent signals.
     """
+    prev_handler = signal.signal(signal.SIGINT, _run_sigint_handlers)
+    if prev_handler != _run_sigint_handlers:
+        _SIGINT_RUN.clear()
     _SIGINT_RUN.setdefault(ignoreNum, []).append(handler)
 
 _intsReceived = 0
@@ -60,14 +80,12 @@ def _run_sigint_handlers(signum=0, sframe=None):
                 exc_info = sys.exc_info()
             except:
                 import traceback
-                print >> sys.stderr, "Error in atexit._run_exitfuncs:"
+                print >> sys.stderr, "Error in subproc._run_sigint_handlers:"
                 traceback.print_exc()
                 exc_info = sys.exc_info()
 
     if exc_info is not None:
         raise exc_info[0], exc_info[1], exc_info[2]
-
-signal.signal(signal.SIGINT, _run_sigint_handlers)
 
 _isTerminating = False
 def killall(wait_s=16):
@@ -95,6 +113,10 @@ def killall(wait_s=16):
     for proc in _CHILD_PROCS:
         if proc.poll() is None:
             proc.kill()
+    time.sleep(0.5)
+    # reap any zombies
+    for proc in _CHILD_PROCS:
+        proc.poll()
 
 def auto_killall(ignoreNumSigInts=0):
     """Automatically terminate all child processes on exit.

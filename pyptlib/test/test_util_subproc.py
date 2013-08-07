@@ -34,14 +34,17 @@ class SubprocTest(unittest.TestCase):
         return int(line.replace("child ", ""))
 
     def test_Popen_IOpassthru(self):
+        """Test that output from the child passes through to the parent."""
         output = subprocess.check_output(self.getMainArgs())
         self.assertTrue(len(output) > 0)
 
     def test_Popen_SINK(self):
+        """Test that output from the child is discarded when stdout = SINK."""
         output = subprocess.check_output(self.getMainArgs())
         self.assertTrue(len(output) == 0)
 
     def test_trap_sigint_multiple(self):
+        """Test that adding multiple SIGINT handlers works as expected."""
         proc = self.spawnMain()
         proc.send_signal(signal.SIGINT)
         self.assertEquals("run h1\n", proc.stdout.readline())
@@ -51,12 +54,14 @@ class SubprocTest(unittest.TestCase):
         proc.terminate()
 
     def test_trap_sigint_reset(self):
+        """Test that resetting SIGINT handlers works as expected."""
         proc = self.spawnMain()
         proc.send_signal(signal.SIGINT)
         self.assertEquals("run h2\n", proc.stdout.readline())
         proc.terminate()
 
     def test_killall_kill(self):
+        """Test that killall() can kill -9 a hung process."""
         proc = self.spawnMain()
         pid = proc.pid
         cid = self.readChildPid(proc)
@@ -68,6 +73,7 @@ class SubprocTest(unittest.TestCase):
         proc.terminate()
 
     def test_auto_killall_2_int(self):
+        """Test that auto_killall works for 2-INT signals."""
         proc = self.spawnMain()
         pid = proc.pid
         cid = self.readChildPid(proc)
@@ -83,6 +89,7 @@ class SubprocTest(unittest.TestCase):
         self.assertFalse(proc_is_alive(cid), "2 INT not handled")
 
     def test_auto_killall_term(self):
+        """Test that auto_killall works for TERM signals."""
         proc = self.spawnMain()
         pid = proc.pid
         cid = self.readChildPid(proc)
@@ -93,6 +100,7 @@ class SubprocTest(unittest.TestCase):
         self.assertFalse(proc_is_alive(cid), "TERM not handled")
 
     def test_auto_killall_exit(self):
+        """Test that auto_killall works on normal exit."""
         proc = self.spawnMain()
         pid = proc.pid
         cid = self.readChildPid(proc)

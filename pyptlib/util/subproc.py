@@ -2,6 +2,8 @@
 
 To have child processes actually be managed by this module, you should use
 the Popen() here rather than subprocess.Popen() directly.
+
+Some parts do not yet work fully on windows (sending/trapping signals).
 """
 
 import atexit
@@ -21,8 +23,13 @@ _CHILD_PROCS = []
 
 SINK = object()
 
+# get default args from subprocess.Popen to use in subproc.Popen
 a = inspect.getargspec(subprocess.Popen.__init__)
 _Popen_defaults = zip(a.args[-len(a.defaults):],a.defaults); del a
+if mswindows:
+    # required for os.kill() to work
+    _Popen_defaults['creationflags'] |= subprocess.CREATE_NEW_PROCESS_GROUP
+
 class Popen(subprocess.Popen):
     """Wrapper for subprocess.Popen that tracks every child process.
 

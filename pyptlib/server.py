@@ -31,7 +31,7 @@ def init(supported_transports):
 
     :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
     """
-    config = ServerConfig()
+    config = ServerConfig.fromEnv()
     wanted = config.declareSupports(supported_transports)
     transports = dict(((k, v) for k, v in config.getServerBindAddresses().items()
                               if k in wanted['transports']))
@@ -55,7 +55,7 @@ def reportSuccess(name, addrport, options):
     :param str options: Transport options.
     """
 
-    config = ServerConfig()
+    config = ServerConfig.fromEnv()
     config.writeMethod(name, addrport, options)
 
 
@@ -69,7 +69,7 @@ def reportFailure(name, message):
     :param str message: Error message.
     """
 
-    config = ServerConfig()
+    config = ServerConfig.fromEnv()
     config.writeMethodError(name, message)
 
 
@@ -80,5 +80,5 @@ def reportEnd():
     *Call after you have launched all the transports you could launch.*
     """
 
-    config = ServerConfig()
+    config = ServerConfig.fromEnv()
     config.writeMethodEnd()

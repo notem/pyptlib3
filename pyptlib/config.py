@@ -36,9 +36,10 @@ class Config(object):
     :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
     """
 
-    def __init__(self, transports, stdout=sys.stdout):
-        self.stateLocation = self.getEnv('TOR_PT_STATE_LOCATION')
-        self.managedTransportVer = self.getEnv('TOR_PT_MANAGED_TRANSPORT_VER').split(',')
+    def __init__(self, stateLocation, managedTransportVer, transports,
+                 stdout=sys.stdout):
+        self.stateLocation = stateLocation
+        self.managedTransportVer = managedTransportVer
         self.allTransportsEnabled = False
         if '*' in transports:
             self.allTransportsEnabled = True
@@ -107,7 +108,18 @@ class Config(object):
     def writeMethodError(self, transportName, message):
         raise NotImplementedError
 
-    def getEnv(self, key, validate=env_has_k):
+    def emit(self, msg):
+        """
+        Announce a message.
+
+        :param str msg: A message.
+        """
+
+        print >>self.stdout, msg
+        self.stdout.flush()
+
+    @classmethod
+    def getEnv(cls, key, validate=env_has_k):
         """
         Get the value of an environment variable.
 
@@ -131,15 +143,6 @@ class Config(object):
             sys.stdout.flush()
             raise EnvError(message)
 
-    def emit(self, msg):
-        """
-        Announce a message.
-
-        :param str msg: A message.
-        """
-
-        print >>self.stdout, msg
-        self.stdout.flush()
 
 class EnvError(Exception):
     """

@@ -28,7 +28,7 @@ def init(supported_transports):
 
     :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
     """
-    config = ClientConfig()
+    config = ClientConfig.fromEnv()
 
     wanted = config.declareSupports(supported_transports)
     retval = {}
@@ -50,7 +50,7 @@ def reportSuccess(name, socksVersion, addrport, args=None, optArgs=None):
     :param str args: OPT-ARGS field for this transport.
     """
 
-    config = ClientConfig()
+    config = ClientConfig.fromEnv()
     config.writeMethod(name, socksVersion, addrport, args, optArgs)
 
 
@@ -64,7 +64,7 @@ def reportFailure(name, message):
     :param str message: Error message.
     """
 
-    config = ClientConfig()
+    config = ClientConfig.fromEnv()
     config.writeMethodError(name, message)
 
 
@@ -75,5 +75,5 @@ def reportEnd():
     *Call after you have launched all the transports you could launch.*
     """
 
-    config = ClientConfig()
+    config = ClientConfig.fromEnv()
     config.writeMethodEnd()

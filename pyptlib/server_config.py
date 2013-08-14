@@ -22,7 +22,8 @@ class ServerConfig(config.Config):
 
     :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
     """
-    def __init__(self, stdout=sys.stdout):
+    @classmethod
+    def fromEnv(cls, stdout=sys.stdout):
         """
         TOR_PT_EXTENDED_SERVER_PORT is optional; tor uses the empty
         string as its value if it does not support the Extended
@@ -33,11 +34,11 @@ class ServerConfig(config.Config):
             if v == '': return None
             return util.parse_addr_spec(v)
 
-        self.extendedORPort = self.getEnv('TOR_PT_EXTENDED_SERVER_PORT', empty_or_valid_addr)
+        extendedORPort = cls.getEnv('TOR_PT_EXTENDED_SERVER_PORT', empty_or_valid_addr)
 
         # Check that either both Extended ORPort and the Extended
         # ORPort Authentication Cookie are present, or neither.
-        if self.extendedORPort:
+        if extendedORPort:
             def validate_authcookie(k, v):
                 if v is None: raise ValueError("Extended ORPort address provided, but no cookie file.")
                 return v
@@ -45,10 +46,10 @@ class ServerConfig(config.Config):
             def validate_authcookie(k, v):
                 if v is not None: raise ValueError("Extended ORPort Authentication cookie file provided, but no Extended ORPort address.")
                 return v
-        self.authCookieFile = self.getEnv('TOR_PT_AUTH_COOKIE_FILE', validate_authcookie)
+        authCookieFile = cls.getEnv('TOR_PT_AUTH_COOKIE_FILE', validate_authcookie)
 
         # Get ORPort.
-        self.ORPort = self.getEnv('TOR_PT_ORPORT', empty_or_valid_addr)
+        ORPort = cls.getEnv('TOR_PT_ORPORT', empty_or_valid_addr)
 
         # Get bind addresses.
         def validate_sever_bindaddr(k, bindaddrs):
@@ -59,19 +60,38 @@ class ServerConfig(config.Config):
                 (addr, port) = util.parse_addr_spec(addrport)
                 serverBindAddr[transport_name] = (addr, port)
             return serverBindAddr
-        self.serverBindAddr = self.getEnv('TOR_PT_SERVER_BINDADDR', validate_sever_bindaddr)
+        serverBindAddr = cls.getEnv('TOR_PT_SERVER_BINDADDR', validate_sever_bindaddr)
 
         # Get transports.
         def validate_transports(k, transports):
             transports = env_has_k(k, transports).split(',')
             t = sorted(transports)
-            b = sorted(self.serverBindAddr.keys())
+            b = sorted(serverBindAddr.keys())
             if t != b:
                 raise ValueError("Can't match transports with bind addresses (%s, %s)" % (t, b))
             return transports
-        transports = self.getEnv('TOR_PT_SERVER_TRANSPORTS', validate_transports)
+        transports = cls.getEnv('TOR_PT_SERVER_TRANSPORTS', validate_transports)
 
-        config.Config.__init__(self, transports, stdout)
+        return cls(
+            stateLocation = cls.getEnv('TOR_PT_STATE_LOCATION'),
+            managedTransportVer = cls.getEnv('TOR_PT_MANAGED_TRANSPORT_VER').split(','),
+            transports = transports,
+            serverBindAddr = serverBindAddr,
+            ORPort = ORPort,
+            extendedORPort = extendedORPort,
+            authCookieFile = authCookieFile,
+            stdout = stdout
+            )
+
+    def __init__(self, stateLocation, managedTransportVer, transports,
+                 serverBindAddr, ORPort, extendedORPort, authCookieFile,
+                 stdout=sys.stdout):
+        config.Config.__init__(self,
+            stateLocation, managedTransportVer, transports, stdout)
+        self.serverBindAddr = serverBindAddr
+        self.ORPort = ORPort
+        self.extendedORPort = extendedORPort
+        self.authCookieFile = authCookieFile
 
     def getExtendedORPort(self):
         """
@@ -138,22 +158,3 @@ class ServerConfig(config.Config):
         """
 
         self.emit('SMETHODS DONE')
-
-    def get_addrport(self, key):
-        """
-        Parse an environment variable holding an address:port value.
-
-        :param str key: Environment variable key.
-
-        :returns: tuple -- (address,port)
-
-        :raises: :class:`pyptlib.config.EnvError` if string was not in address:port format.
-        """
-
-        string = self.get(key)
-        try:
-            return util.parse_addr_spec(string)
-        except ValueError, err:
-            self.writeEnvError(err)
-            raise config.EnvError(err)
-

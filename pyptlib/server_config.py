@@ -22,7 +22,7 @@ class ServerConfig(config.Config):
 
     :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
     """
-    def __init__(self):
+    def __init__(self, stdout=sys.stdout):
         """
         TOR_PT_EXTENDED_SERVER_PORT is optional; tor uses the empty
         string as its value if it does not support the Extended
@@ -71,7 +71,7 @@ class ServerConfig(config.Config):
             return transports
         transports = self.getEnv('TOR_PT_SERVER_TRANSPORTS', validate_transports)
 
-        config.Config.__init__(self, transports)
+        config.Config.__init__(self, transports, stdout)
 
     def getExtendedORPort(self):
         """

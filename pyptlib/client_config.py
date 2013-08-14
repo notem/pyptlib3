@@ -15,9 +15,10 @@ class ClientConfig(Config):
 
     :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
     """
-    def __init__(self):
+    def __init__(self, stdout=sys.stdout):
         Config.__init__(self,
-            transports = self.getEnv('TOR_PT_CLIENT_TRANSPORTS').split(','))
+            transports = self.getEnv('TOR_PT_CLIENT_TRANSPORTS').split(','),
+            stdout = stdout)
 
     def writeMethod(self, name, socksVersion, addrport, args=None, optArgs=None):
         """

@@ -7,6 +7,9 @@ Low-level parts of pyptlib that are only useful to servers.
 
 import pyptlib.config as config
 import pyptlib.util as util
+import sys
+
+from pyptlib.config import env_has_k, env_id
 
 class ServerConfig(config.Config):
     """
@@ -20,62 +23,58 @@ class ServerConfig(config.Config):
     :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
     """
     def __init__(self):
-        config.Config.__init__(self)
-
         """
         TOR_PT_EXTENDED_SERVER_PORT is optional; tor uses the empty
         string as its value if it does not support the Extended
         ORPort.
         """
-        ext_orport_tmp = self.get('TOR_PT_EXTENDED_SERVER_PORT')
-        if ext_orport_tmp == '':
-            self.extendedORPort = None
-        else:
-            self.extendedORPort = self.get_addrport('TOR_PT_EXTENDED_SERVER_PORT')
+        config.Config.__init__(self)
 
-        if self.check('TOR_PT_AUTH_COOKIE_FILE'):
-            self.authCookieFile = self.get('TOR_PT_AUTH_COOKIE_FILE')
-        else:
-            self.authCookieFile = None
+        def empty_or_valid_addr(k, v):
+            v = env_has_k(k, v)
+            if v == '': return None
+            return util.parse_addr_spec(v)
+
+        self.extendedORPort = self.getEnv('TOR_PT_EXTENDED_SERVER_PORT', empty_or_valid_addr)
 
         # Check that either both Extended ORPort and the Extended
         # ORPort Authentication Cookie are present, or neither.
-        if self.extendedORPort and not self.authCookieFile:
-            err = "Extended ORPort address provided, but no cookie file."
-            self.writeEnvError(err)
-            raise config.EnvError(err)
-        elif self.authCookieFile and not self.extendedORPort:
-            err = "Extended ORPort Authentication cookie file provided, but no Extended ORPort address."
-            self.writeEnvError(err)
-            raise config.EnvError(err)
+        if self.extendedORPort:
+            def validate_authcookie(k, v):
+                if v is None: raise ValueError("Extended ORPort address provided, but no cookie file.")
+                return v
+        else:
+            def validate_authcookie(k, v):
+                if v is not None: raise ValueError("Extended ORPort Authentication cookie file provided, but no Extended ORPort address.")
+                return v
+        self.authCookieFile = self.getEnv('TOR_PT_AUTH_COOKIE_FILE', validate_authcookie)
 
         # Get ORPort.
-        self.ORPort = self.get_addrport('TOR_PT_ORPORT')
+        self.ORPort = self.getEnv('TOR_PT_ORPORT', empty_or_valid_addr)
 
         # Get bind addresses.
-        self.serverBindAddr = {}
-        bindaddrs = self.get('TOR_PT_SERVER_BINDADDR').split(',')
-        for bindaddr in bindaddrs:
-            (transport_name, addrport) = bindaddr.split('-')
-
-            try:
+        def validate_sever_bindaddr(k, bindaddrs):
+            serverBindAddr = {}
+            bindaddrs = env_has_k(k, bindaddrs).split(',')
+            for bindaddr in bindaddrs:
+                (transport_name, addrport) = bindaddr.split('-')
                 (addr, port) = util.parse_addr_spec(addrport)
-            except ValueError, err:
-                self.writeEnvError(err)
-                raise config.EnvError(err)
-
-            self.serverBindAddr[transport_name] = (addr, port)
+                serverBindAddr[transport_name] = (addr, port)
+            return serverBindAddr
+        self.serverBindAddr = self.getEnv('TOR_PT_SERVER_BINDADDR', validate_sever_bindaddr)
 
         # Get transports.
-        self.transports = self.get('TOR_PT_SERVER_TRANSPORTS').split(',')
+        def validate_transports(k, transports):
+            transports = env_has_k(k, transports).split(',')
+            t = sorted(transports)
+            b = sorted(self.serverBindAddr.keys())
+            if t != b:
+                raise ValueError("Can't match transports with bind addresses (%s, %s)" % (t, b))
+            return transports
+        self.transports = self.getEnv('TOR_PT_SERVER_TRANSPORTS', validate_transports)
         if '*' in self.transports:
             self.allTransportsEnabled = True
             self.transports.remove('*')
-
-        if sorted(self.transports) != sorted(self.serverBindAddr.keys()):
-            err = "Can't match transports with bind addresses (%s, %s)" % (self.transports, self.serverBindAddr.keys())
-            self.writeEnvError(err)
-            raise config.EnvError(err)
 
     def getExtendedORPort(self):
         """

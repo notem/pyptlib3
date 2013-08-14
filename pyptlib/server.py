@@ -31,23 +31,15 @@ def init(supported_transports):
 
     :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
     """
-
-    supportedTransportVersion = '1'
-
     config = ServerConfig()
-
-    if config.checkManagedTransportVersion(supportedTransportVersion):
-        config.writeVersion(supportedTransportVersion)
-    else:
-        config.writeVersionError()
-        raise EnvError("Unsupported managed proxy protocol version (%s)" %
-                           str(config.getManagedTransportVersions()))
-
+    wanted = config.declareSupports(supported_transports)
+    transports = dict(((k, v) for k, v in config.getServerBindAddresses().items()
+                              if k in wanted['transports']))
     retval = {}
     retval['state_loc'] = config.getStateLocation()
     retval['orport'] = config.getORPort()
     retval['ext_orport'] = config.getExtendedORPort()
-    retval['transports'] = _getTransportsDict(supported_transports, config)
+    retval['transports'] = transports
     retval['auth_cookie_file'] = config.getAuthCookieFile()
 
     return retval
@@ -90,26 +82,3 @@ def reportEnd():
 
     config = ServerConfig()
     config.writeMethodEnd()
-
-def _getTransportsDict(supported_transports, config):
-    """
-    Figure out which transports the application should launch, based on
-    the transports it supports and on the transports that Tor wants it
-    to spawn.
-
-    :param list supported_transports: Transports that the application supports.
-    :param :class:`pyptlib.client_config.ClientConfig` config: Configuration of Tor.
-
-    :returns: A dictionary of 'transport => bind address' of transports that the application should launch.
-    """
-    transports = {}
-
-    if config.getAllTransportsEnabled():
-        return config.getServerBindAddresses()
-
-    for transport in config.getServerTransports():
-        if transport in supported_transports:
-            assert(transport in config.getServerBindAddresses())
-            transports[transport] = config.getServerBindAddresses()[transport]
-
-    return transports

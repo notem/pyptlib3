@@ -5,6 +5,8 @@
 Low-level parts of pyptlib that are only useful to clients.
 """
 
+import sys
+
 from pyptlib.config import Config
 
 class ClientConfig(Config):
@@ -16,21 +18,10 @@ class ClientConfig(Config):
     def __init__(self):
         Config.__init__(self)
 
-        self.transports = self.get('TOR_PT_CLIENT_TRANSPORTS').split(',')
+        self.transports = self.getEnv('TOR_PT_CLIENT_TRANSPORTS').split(',')
         if '*' in self.transports:
             self.allTransportsEnabled = True
             self.transports.remove('*')
-
-    def getClientTransports(self): # XXX why is this client-specific ???
-        """
-        Return a list of strings representing the client transports reported by Tor.
-
-        If present, the wildcard transport, '*', is stripped from this list and used to set allTransportsEnabled to True.
-
-        :returns: list of transports
-        """
-
-        return self.transports
 
     def writeMethod(self, name, socksVersion, addrport, args=None, optArgs=None):
         """
@@ -68,5 +59,4 @@ class ClientConfig(Config):
         """
 
         self.emit('CMETHODS DONE')
-
 

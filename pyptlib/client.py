@@ -8,6 +8,7 @@ Public client-side pyptlib API.
 from pyptlib.config import EnvError
 from pyptlib.client_config import ClientConfig
 
+
 def init(supported_transports):
     """
     Bootstrap client-side managed-proxy mode.
@@ -27,21 +28,12 @@ def init(supported_transports):
 
     :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
     """
-
-    supportedTransportVersion = '1'
-
     config = ClientConfig()
 
-    if config.checkManagedTransportVersion(supportedTransportVersion):
-        config.writeVersion(supportedTransportVersion)
-    else:
-        config.writeVersionError()
-        raise EnvError("Unsupported managed proxy protocol version (%s)" %
-                           str(config.getManagedTransportVersions()))
-
+    wanted = config.declareSupports(supported_transports)
     retval = {}
     retval['state_loc'] = config.getStateLocation()
-    retval['transports'] = _getTransportsList(supported_transports, config)
+    retval['transports'] = wanted['transports']
 
     return retval
 
@@ -85,26 +77,3 @@ def reportEnd():
 
     config = ClientConfig()
     config.writeMethodEnd()
-
-def _getTransportsList(supported_transports, config):
-    """
-    Figure out which transports the application should launch, based on
-    the transports it supports and on the transports that Tor wants it
-    to spawn.
-
-    :param list supported_transports: Transports that the application supports.
-    :param :class:`pyptlib.client_config.ClientConfig` config: Configuration of Tor.
-
-    :returns: A list of transports that the application should launch.
-    """
-    transports = []
-
-    if config.getAllTransportsEnabled():
-        return supported_transports
-
-    for transport in config.getClientTransports():
-        if transport in supported_transports:
-            transports.append(transport)
-
-    return transports
-

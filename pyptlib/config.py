@@ -7,6 +7,23 @@ Parts of pyptlib that are useful both to clients and servers.
 
 import os, sys
 
+SUPPORTED_TRANSPORT_VERSIONS = ['1']
+
+def env_has_k(k, v):
+    """
+    A validator for Config.getEnv that returns the value of the envvar if it
+    was found, or throws ValueError if it was not.
+    """
+    if v is None: raise ValueError('Missing environment variable %s' % k)
+    return v
+
+def env_id(k, v):
+    """
+    A validator for Config.getEnv that returns the value of the envvar if it
+    was found, or None if it was not.
+    """
+    return v
+
 class Config(object):
     """
     pyptlib's configuration.
@@ -19,23 +36,10 @@ class Config(object):
     :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
     """
 
-    stateLocation = None  # TOR_PT_STATE_LOCATION
-    managedTransportVer = []  # TOR_PT_MANAGED_TRANSPORT_VER
-    transports = []  # TOR_PT_SERVER_TRANSPORTS or TOR_PT_CLIENT_TRANSPORTS
-    allTransportsEnabled = False
-
     def __init__(self):
-        self.stateLocation = self.get('TOR_PT_STATE_LOCATION')
-        self.managedTransportVer = self.get('TOR_PT_MANAGED_TRANSPORT_VER').split(',')
-
-    def checkClientMode(self):
-        """
-        Check whether Tor wants us to run as a client or as a server.
-
-        :returns: bool -- True if Tor wants us to run as a client.
-        """
-
-        return self.check('TOR_PT_CLIENT_TRANSPORTS')
+        self.stateLocation = self.getEnv('TOR_PT_STATE_LOCATION')
+        self.managedTransportVer = self.getEnv('TOR_PT_MANAGED_TRANSPORT_VER').split(',')
+        self.allTransportsEnabled = False
 
     def getStateLocation(self):
         """
@@ -51,17 +55,6 @@ class Config(object):
 
         return self.managedTransportVer
 
-    def checkManagedTransportVersion(self, version):
-        """
-        Check if Tor supports a specific managed-proxy protocol version.
-
-        :param string version: A managed-proxy protocol version.
-
-        :returns: bool -- True if version is supported.
-        """
-
-        return version in self.managedTransportVer
-
     def getAllTransportsEnabled(self):
         """
         Check if Tor wants the application to spawn all its transpotrs.
@@ -71,71 +64,66 @@ class Config(object):
 
         return self.allTransportsEnabled
 
-    def checkTransportEnabled(self, transport):
+    def declareSupports(self, transports):
         """
-        Check if Tor wants the application to spawn a specific transport.
+        Declare to Tor the versions and transports that this PT supports.
 
-        :param string transport: The name of a pluggable transport.
+        :param list transports: List of transport methods this PT supports.
 
-        :returns: bool -- True if Tor wants the application to spawn that transport.
+        :returns: {"transports": wanted_transports} -- The subset of the
+            declared inputs that were actually wanted by Tor.
         """
+        versions = SUPPORTED_TRANSPORT_VERSIONS
+        if type(transports) == str:
+            transports = [transports]
 
-        return self.allTransportsEnabled or transport in self.transports
+        wanted_versions = [v for v in versions if v in self.managedTransportVer]
+        if not wanted_versions:
+            self.emit('VERSION-ERROR no-version')
+            raise EnvError("Unsupported managed proxy protocol version (%s)" %
+                           self.managedTransportVer)
+        else:
+            self.emit('VERSION %s' % wanted_versions[0])
 
-    def writeEnvError(self, message):  # ENV-ERROR
-        """
-        Announce that an error occured while parsing the environment.
+        if self.allTransportsEnabled:
+            wanted_transports = transports.keys()
+            unwanted_transports = []
+        else:
+            # return able in priority-order determined by plugin
+            wanted_transports = [t for t in transports if t in self.transports]
+            # return unable in priority-order as requested by Tor
+            unwanted_transports = [t for t in self.transports if t not in transports]
 
-        :param str message: Error message.
-        """
+        for t in unwanted_transports:
+            self.writeMethodError(t, 'unsupported transport')
 
-        self.emit('ENV-ERROR %s' % message)
+        return { 'transports': wanted_transports }
 
-    def writeVersion(self, version):  # VERSION
-        """
-        Announce that a specific managed-proxy protocol version is supported.
+    def writeMethodError(self, transportName, message):
+        raise NotImplementedError
 
-        :param str version: A managed-proxy protocol version.
-        """
-
-        self.emit('VERSION %s' % version)
-
-    def writeVersionError(self):  # VERSION-ERROR
-        """
-        Announce that we could not find a supported managed-proxy
-        protocol version.
-        """
-
-        self.emit('VERSION-ERROR no-version')
-
-    def check(self, key):
-        """
-        Check the environment for a specific environment variable.
-
-        :param str key: Environment variable key.
-
-        :returns: bool -- True if the environment variable is set.
-        """
-
-        return key in os.environ
-
-    def get(self, key):
+    def getEnv(self, key, validate=env_has_k):
         """
         Get the value of an environment variable.
 
         :param str key: Environment variable key.
+        :param f validate: Function that takes a var and a value and returns
+            a transformed value if it is valid, or throws an exception.
+            If the environment does not define var, value is None. By default,
+            we return the value if the environment has the variable, otherwise
+            we raise a ValueError.
 
         :returns: str -- The value of the envrionment variable.
 
         :raises: :class:`pyptlib.config.EnvError` if environment
         variable could not be found.
         """
-
-        if key in os.environ:
-            return os.environ[key]
-        else:
-            message = 'Missing environment variable %s' % key
-            self.writeEnvError(message)
+        try:
+            return validate(key, os.getenv(key))
+        except Exception, e:
+            message = 'ENV-ERROR %s' % e.message
+            print message
+            sys.stdout.flush()
             raise EnvError(message)
 
     def emit(self, msg):

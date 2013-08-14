@@ -28,8 +28,6 @@ class ServerConfig(config.Config):
         string as its value if it does not support the Extended
         ORPort.
         """
-        config.Config.__init__(self)
-
         def empty_or_valid_addr(k, v):
             v = env_has_k(k, v)
             if v == '': return None
@@ -71,10 +69,9 @@ class ServerConfig(config.Config):
             if t != b:
                 raise ValueError("Can't match transports with bind addresses (%s, %s)" % (t, b))
             return transports
-        self.transports = self.getEnv('TOR_PT_SERVER_TRANSPORTS', validate_transports)
-        if '*' in self.transports:
-            self.allTransportsEnabled = True
-            self.transports.remove('*')
+        transports = self.getEnv('TOR_PT_SERVER_TRANSPORTS', validate_transports)
+
+        config.Config.__init__(self, transports)
 
     def getExtendedORPort(self):
         """

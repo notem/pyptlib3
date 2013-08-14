@@ -36,10 +36,14 @@ class Config(object):
     :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
     """
 
-    def __init__(self):
+    def __init__(self, transports):
         self.stateLocation = self.getEnv('TOR_PT_STATE_LOCATION')
         self.managedTransportVer = self.getEnv('TOR_PT_MANAGED_TRANSPORT_VER').split(',')
         self.allTransportsEnabled = False
+        if '*' in transports:
+            self.allTransportsEnabled = True
+            transports.remove('*')
+        self.transports = transports
 
     def getStateLocation(self):
         """

@@ -145,12 +145,19 @@ def _run_sigint_handlers(signum=0, sframe=None):
 
 
 _isTerminating = False
-def killall(wait_s=16):
+def killall(cleanup=lambda:None, wait_s=16):
     """Attempt to gracefully terminate all child processes.
 
     All children are told to terminate gracefully. A waiting period is then
     applied, after which all children are killed forcefully. If all children
     terminate before this waiting period is over, the function exits early.
+
+    Args:
+        cleanup: Run after all children are dead. For example, if your program
+                does not automatically terminate after this, you can use this
+                to signal that it should exit. In particular, Twisted
+                applications ought to use this to call reactor.stop().
+        wait_s: Time in seconds to wait before trying to kill children.
     """
     # TODO(infinity0): log this somewhere, maybe
     global _isTerminating, _CHILD_PROCS
@@ -174,16 +181,18 @@ def killall(wait_s=16):
     # reap any zombies
     for proc in _CHILD_PROCS:
         proc.poll()
+    cleanup()
 
-def auto_killall(ignoreNumSigInts=0):
+def auto_killall(ignoreNumSigInts=0, *args, **kwargs):
     """Automatically terminate all child processes on exit.
 
     Args:
         ignoreNumSigInts: this number of INT signals will be ignored before
             attempting termination. This will be attempted unconditionally in
             all other cases, such as on normal exit, or on a TERM signal.
+        *args, **kwargs: See killall().
     """
-    killall_handler = lambda signum, sframe: killall()
+    killall_handler = lambda signum, sframe: killall(*args, **kwargs)
     trap_sigint(killall_handler, ignoreNumSigInts)
     signal.signal(signal.SIGTERM, killall_handler)
-    atexit.register(killall)
+    atexit.register(killall, *args, **kwargs)

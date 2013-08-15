@@ -54,7 +54,7 @@ def main_trap_sigint_reset(testname, *argv):
 def main_killall_kill(testname, *argv):
     child = startChild(testname, True)
     time.sleep(1)
-    killall(4)
+    killall(wait_s=4)
     time.sleep(100)
 
 def main_auto_killall_2_int(testname, *argv):

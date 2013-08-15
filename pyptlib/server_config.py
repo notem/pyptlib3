@@ -19,16 +19,19 @@ class ServerConfig(config.Config):
     :var tuple extendedORPort: (ip,port) pointing to Tor's Extended ORPort. None if Extended ORPort is not supported.
     :var dict serverBindAddr: A dictionary {<transport> : [<addr>, <port>]}, where <transport> is the name of the transport that must be spawned, and [<addr>, <port>] is a list containing the location where that transport should bind. The dictionary can be empty.
     :var string authCookieFile: String representing the filesystem path where the Extended ORPort Authentication cookie is stored. None if Extended ORPort authentication is not supported.
-
-    :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
     """
+
     @classmethod
-    def fromEnv(cls, stdout=sys.stdout):
+    def fromEnv(cls):
         """
-        TOR_PT_EXTENDED_SERVER_PORT is optional; tor uses the empty
-        string as its value if it does not support the Extended
-        ORPort.
+        Build a ServerConfig from environment variables.
+
+        :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
         """
+
+        # TOR_PT_EXTENDED_SERVER_PORT is optional; tor uses the empty
+        # string as its value if it does not support the Extended
+        # ORPort.
         def empty_or_valid_addr(k, v):
             v = env_has_k(k, v)
             if v == '': return None
@@ -79,15 +82,13 @@ class ServerConfig(config.Config):
             serverBindAddr = serverBindAddr,
             ORPort = ORPort,
             extendedORPort = extendedORPort,
-            authCookieFile = authCookieFile,
-            stdout = stdout
+            authCookieFile = authCookieFile
             )
 
     def __init__(self, stateLocation, managedTransportVer, transports,
-                 serverBindAddr, ORPort, extendedORPort, authCookieFile,
-                 stdout=sys.stdout):
+                 serverBindAddr, ORPort, extendedORPort, authCookieFile):
         config.Config.__init__(self,
-            stateLocation, managedTransportVer, transports, stdout)
+            stateLocation, managedTransportVer, transports)
         self.serverBindAddr = serverBindAddr
         self.ORPort = ORPort
         self.extendedORPort = extendedORPort
@@ -122,39 +123,3 @@ class ServerConfig(config.Config):
         :returns: :attr:`pyptlib.server_config.ServerConfig.authCookieFile`
         """
         return self.authCookieFile
-
-    def writeMethod(self, name, addrport, options):
-        """
-        Write a message to stdout announcing that a server transport was
-        successfully launched.
-
-        :param str name: Name of transport.
-        :param tuple addrport: (addr,port) where this transport is listening for connections.
-        :param str options: Transport options.
-        """
-
-        if options:
-            self.emit('SMETHOD %s %s:%s %s' % (name, addrport[0],
-                      addrport[1], options))
-        else:
-            self.emit('SMETHOD %s %s:%s' % (name, addrport[0],
-                      addrport[1]))
-
-    def writeMethodError(self, name, message):  # SMETHOD-ERROR
-        """
-        Write a message to stdout announcing that we failed to launch
-        a transport.
-
-        :param str name: Name of transport.
-        :param str message: Error message.
-        """
-
-        self.emit('SMETHOD-ERROR %s %s' % (name, message))
-
-    def writeMethodEnd(self):  # SMETHODS DONE
-        """
-        Write a message to stdout announcing that we finished
-        launching transports..
-        """
-
-        self.emit('SMETHODS DONE')

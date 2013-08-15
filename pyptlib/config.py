@@ -7,7 +7,6 @@ Parts of pyptlib that are useful both to clients and servers.
 
 import os, sys
 
-SUPPORTED_TRANSPORT_VERSIONS = ['1']
 
 def env_has_k(k, v):
     """
@@ -32,12 +31,9 @@ class Config(object):
     :var list managedTransportVer: List of managed-proxy protocol versions that Tor supports.
     :var list transports: Strings of pluggable transport names that Tor wants us to handle.
     :var bool allTransportsEnabled: True if Tor wants us to spawn all the transports.
-
-    :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
     """
 
-    def __init__(self, stateLocation, managedTransportVer, transports,
-                 stdout=sys.stdout):
+    def __init__(self, stateLocation, managedTransportVer, transports):
         self.stateLocation = stateLocation
         self.managedTransportVer = managedTransportVer
         self.allTransportsEnabled = False
@@ -45,7 +41,6 @@ class Config(object):
             self.allTransportsEnabled = True
             transports.remove('*')
         self.transports = transports
-        self.stdout = stdout
 
     def getStateLocation(self):
         """
@@ -70,54 +65,6 @@ class Config(object):
 
         return self.allTransportsEnabled
 
-    def declareSupports(self, transports):
-        """
-        Declare to Tor the versions and transports that this PT supports.
-
-        :param list transports: List of transport methods this PT supports.
-
-        :returns: {"transports": wanted_transports} -- The subset of the
-            declared inputs that were actually wanted by Tor.
-        """
-        versions = SUPPORTED_TRANSPORT_VERSIONS
-        if type(transports) == str:
-            transports = [transports]
-
-        wanted_versions = [v for v in versions if v in self.managedTransportVer]
-        if not wanted_versions:
-            self.emit('VERSION-ERROR no-version')
-            raise EnvError("Unsupported managed proxy protocol version (%s)" %
-                           self.managedTransportVer)
-        else:
-            self.emit('VERSION %s' % wanted_versions[0])
-
-        if self.allTransportsEnabled:
-            wanted_transports = transports.keys()
-            unwanted_transports = []
-        else:
-            # return able in priority-order determined by plugin
-            wanted_transports = [t for t in transports if t in self.transports]
-            # return unable in priority-order as requested by Tor
-            unwanted_transports = [t for t in self.transports if t not in transports]
-
-        for t in unwanted_transports:
-            self.writeMethodError(t, 'unsupported transport')
-
-        return { 'transports': wanted_transports }
-
-    def writeMethodError(self, transportName, message):
-        raise NotImplementedError
-
-    def emit(self, msg):
-        """
-        Announce a message.
-
-        :param str msg: A message.
-        """
-
-        print >>self.stdout, msg
-        self.stdout.flush()
-
     @classmethod
     def getEnv(cls, key, validate=env_has_k):
         """
@@ -132,23 +79,24 @@ class Config(object):
 
         :returns: str -- The value of the envrionment variable.
 
-        :raises: :class:`pyptlib.config.EnvError` if environment
-        variable could not be found.
+        :raises: :class:`pyptlib.config.EnvError` if environment variable could not be
+                found, or if it did not pass validation.
         """
         try:
             return validate(key, os.getenv(key))
         except Exception, e:
-            message = 'ENV-ERROR %s' % e.message
-            print message
-            sys.stdout.flush()
-            raise EnvError(message)
-
+            raise EnvError(cause=e)
 
 class EnvError(Exception):
     """
     Thrown when the environment is incomplete or corrupted.
     """
-    pass
+    def __init__(self, message=None, cause=None):
+        self.message = message
+        self.cause = cause
+
+    def __str__(self):
+        return self.message or self.cause.message
 
 def checkClientMode():
     """

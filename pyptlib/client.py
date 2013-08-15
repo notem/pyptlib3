@@ -5,75 +5,60 @@
 Public client-side pyptlib API.
 """
 
-from pyptlib.config import EnvError
+from pyptlib.core import TransportPlugin
 from pyptlib.client_config import ClientConfig
 
 
+class ClientTransportPlugin(TransportPlugin):
+    """
+    Runtime process for a client TransportPlugin.
+    """
+    configType = ClientConfig
+    methodName = 'CMETHOD'
+
+    def reportMethodSuccess(self, name, socksVersion, addrport, args=None, optArgs=None):
+        """
+        Write a message to stdout announcing that a transport was
+        successfully launched.
+
+        :param str name: Name of transport.
+        :param int socksVersion: The SOCKS protocol version.
+        :param tuple addrport: (addr,port) where this transport is listening for connections.
+        :param str args: ARGS field for this transport.
+        :param str optArgs: OPT-ARGS field for this transport.
+        """
+
+        methodLine = 'CMETHOD %s socks%s %s:%s' % (name, socksVersion,
+                addrport[0], addrport[1])
+        if args and len(args) > 0:
+            methodLine = methodLine + ' ARGS=' + args.join(',')
+        if optArgs and len(optArgs) > 0:
+            methodLine = methodLine + ' OPT-ARGS=' + args.join(',')
+        self.emit(methodLine)
+
+
 def init(supported_transports):
-    """
-    Bootstrap client-side managed-proxy mode.
+    """DEPRECATED. Use ClientTransportPlugin().init() instead."""
+    client = ClientTransportPlugin()
 
-    *Call in the beginning of your application.*
-
-    :param list supported_transports: Names of the transports that the application supports.
-
-    :returns: dictionary that contains information for the application.
-
-	    ==========  ========== ==========
-	    Key         Type       Value
-	    ==========  ========== ==========
-	    state_loc   string     Directory where the managed proxy should dump its state files (if needed).
-	    transports  list       Strings of the names of the transports that should be launched. The list can be empty.
-	    ==========  ========== ==========
-
-    :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
-    """
-    config = ClientConfig.fromEnv()
-
-    wanted = config.declareSupports(supported_transports)
+    client.init(supported_transports)
     retval = {}
-    retval['state_loc'] = config.getStateLocation()
-    retval['transports'] = wanted['transports']
+    retval['state_loc'] = client.config.getStateLocation()
+    retval['transports'] = client.served_transports
 
     return retval
 
 def reportSuccess(name, socksVersion, addrport, args=None, optArgs=None):
-    """
-    Report that a client transport was launched succesfully.
-
-    *Always call after successfully launching a transport.*
-
-    :param str name: Name of transport.
-    :param int socksVersion: The SOCKS protocol version.
-    :param tuple addrport: (addr,port) where this transport is listening for connections.
-    :param str args: ARGS field for this transport.
-    :param str args: OPT-ARGS field for this transport.
-    """
-
-    config = ClientConfig.fromEnv()
-    config.writeMethod(name, socksVersion, addrport, args, optArgs)
-
+    """DEPRECATED. Use ClientTransportPlugin().reportMethodSuccess() instead."""
+    config = ClientTransportPlugin()
+    config.reportMethodSuccess(name, socksVersion, addrport, args, optArgs)
 
 def reportFailure(name, message):
-    """
-    Report that a client transport failed to launch.
-
-    *Always call after failing to launch a transport.*
-
-    :param str name: Name of transport.
-    :param str message: Error message.
-    """
-
-    config = ClientConfig.fromEnv()
-    config.writeMethodError(name, message)
-
+    """DEPRECATED. Use ClientTransportPlugin().reportMethodError() instead."""
+    config = ClientTransportPlugin()
+    config.reportMethodError(name, message)
 
 def reportEnd():
-    """
-    Report that we are done launching transports.
-
-    *Call after you have launched all the transports you could launch.*
-    """
-
-    config = ClientConfig.fromEnv()
-    config.writeMethodEnd()
+    """DEPRECATED. Use ClientTransportPlugin().reportMethodsEnd() instead."""
+    config = ClientTransportPlugin()
+    config.reportMethodsEnd()

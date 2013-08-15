@@ -55,7 +55,7 @@ class ServerConfig(config.Config):
         ORPort = cls.getEnv('TOR_PT_ORPORT', empty_or_valid_addr)
 
         # Get bind addresses.
-        def validate_sever_bindaddr(k, bindaddrs):
+        def validate_server_bindaddr(k, bindaddrs):
             serverBindAddr = {}
             bindaddrs = env_has_k(k, bindaddrs).split(',')
             for bindaddr in bindaddrs:
@@ -63,7 +63,7 @@ class ServerConfig(config.Config):
                 (addr, port) = util.parse_addr_spec(addrport)
                 serverBindAddr[transport_name] = (addr, port)
             return serverBindAddr
-        serverBindAddr = cls.getEnv('TOR_PT_SERVER_BINDADDR', validate_sever_bindaddr)
+        serverBindAddr = cls.getEnv('TOR_PT_SERVER_BINDADDR', validate_server_bindaddr)
 
         # Get transports.
         def validate_transports(k, transports):

@@ -66,9 +66,6 @@ class TransportPlugin(object):
             declared inputs that were actually wanted by Tor.
         """
         versions = SUPPORTED_TRANSPORT_VERSIONS
-        if type(transports) == str:
-            transports = [transports]
-
         cfg = self.config
 
         wanted_versions = [v for v in versions if v in cfg.managedTransportVer]

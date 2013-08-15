@@ -27,7 +27,7 @@ Detailed API Overview
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 An application using pyptlib should start by calling
-:func:`pyptlib.util.checkClientMode` to learn whether Tor wants it
+:func:`pyptlib.config.checkClientMode` to learn whether Tor wants it
 to run as a client or as a server.
 
 1) Get transport information from Tor

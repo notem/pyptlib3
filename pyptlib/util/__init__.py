@@ -8,19 +8,10 @@ Utility functions.
 import re
 import socket
 
-from pyptlib.config import Config, EnvError
+# Deprecated; use pyptlib.config.checkClientMode() instead.
+# TODO(infinity0): remove this when all downstream migrates to new API
+from pyptlib.config import checkClientMode
 
-def checkClientMode(): # XXX WTF!???! This also exists in config.py.
-    """
-    Check whether Tor wants us to run as a client or as a server.
-
-    :returns: bool -- True if Tor wants us to run as a client.
-    """
-    try:
-        c = Config()
-        return c.checkClientMode()
-    except EnvError:
-        return False
 
 # This code is borrowed from flashproxy. Thanks David!
 def parse_addr_spec(spec, defhost = None, defport = None, resolve = False):

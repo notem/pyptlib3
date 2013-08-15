@@ -153,3 +153,8 @@ class EnvError(Exception):
     Thrown when the environment is incomplete or corrupted.
     """
     pass
+
+def checkClientMode():
+    if 'TOR_PT_CLIENT_TRANSPORTS' in os.environ: return True
+    if 'TOR_PT_SERVER_TRANSPORTS' in os.environ: return False
+    raise EnvError('neither TOR_PT_{SERVER,CLIENT}_TRANSPORTS set')

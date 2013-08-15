@@ -81,15 +81,9 @@ class TransportPlugin(object):
 
         if cfg.allTransportsEnabled:
             wanted_transports = transports.keys()
-            unwanted_transports = []
         else:
             # return able in priority-order determined by plugin
             wanted_transports = [t for t in transports if t in cfg.transports]
-            # return unable in priority-order as requested by Tor
-            unwanted_transports = [t for t in cfg.transports if t not in transports]
-
-        for t in unwanted_transports:
-            self.reportMethodError(t, 'unsupported transport')
 
         self.served_transports = wanted_transports
         return { 'transports': wanted_transports }

@@ -11,7 +11,7 @@ from subprocess import PIPE
 
 def startChild(subcmd, report=False, stdout=SINK, **kwargs):
     proc = Popen(
-        ["python", "util_subproc_child.py", subcmd],
+        ["python", "-m", "pyptlib.test.util_subproc_child", subcmd],
         stdout = stdout,
         **kwargs
     )

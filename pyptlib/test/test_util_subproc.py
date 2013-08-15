@@ -20,7 +20,7 @@ class SubprocTest(unittest.TestCase):
         return self.id().split(".")[-1].replace("test_", "")
 
     def getMainArgs(self):
-        return ["python", "./util_subproc_main.py", self.name()]
+        return ["python", "-m" "pyptlib.test.util_subproc_main", self.name()]
 
     def spawnMain(self, cmd=None, stdout=PIPE, **kwargs):
         # spawn the main test process and wait a bit for it to initialise

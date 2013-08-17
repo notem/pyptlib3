@@ -155,6 +155,12 @@ class EnvError(Exception):
     pass
 
 def checkClientMode():
+    """
+    Read the environment and return true if we are supposed to be a
+    client. Return false if we are supposed to be a server.
+
+    Raise EnvError if the environment was not properly set up.
+    """
     if 'TOR_PT_CLIENT_TRANSPORTS' in os.environ: return True
     if 'TOR_PT_SERVER_TRANSPORTS' in os.environ: return False
     raise EnvError('neither TOR_PT_{SERVER,CLIENT}_TRANSPORTS set')

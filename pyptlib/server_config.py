@@ -9,7 +9,7 @@ import pyptlib.config as config
 import pyptlib.util as util
 import sys
 
-from pyptlib.config import env_has_k, env_id, get_env
+from pyptlib.config import env_has_k, env_id, get_env, SUPPORTED_TRANSPORT_VERSIONS
 
 class ServerConfig(config.Config):
     """
@@ -85,8 +85,13 @@ class ServerConfig(config.Config):
             authCookieFile = authCookieFile
             )
 
-    def __init__(self, stateLocation, managedTransportVer, transports,
-                 serverBindAddr, ORPort, extendedORPort, authCookieFile):
+    def __init__(self, stateLocation,
+                 managedTransportVer=SUPPORTED_TRANSPORT_VERSIONS,
+                 transports=[],
+                 serverBindAddr={},
+                 ORPort=None,
+                 extendedORPort=None,
+                 authCookieFile=None):
         config.Config.__init__(self,
             stateLocation, managedTransportVer, transports)
         self.serverBindAddr = serverBindAddr

@@ -1,8 +1,6 @@
 import sys
 
-from pyptlib.config import EnvError
-
-SUPPORTED_TRANSPORT_VERSIONS = ['1']
+from pyptlib.config import EnvError, SUPPORTED_TRANSPORT_VERSIONS
 
 
 class TransportPlugin(object):

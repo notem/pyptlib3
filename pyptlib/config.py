@@ -5,8 +5,9 @@
 Parts of pyptlib that are useful both to clients and servers.
 """
 
-import os, sys
+import os
 
+SUPPORTED_TRANSPORT_VERSIONS = ['1']
 
 def env_has_k(k, v):
     """
@@ -33,7 +34,9 @@ class Config(object):
     :var bool allTransportsEnabled: True if Tor wants us to spawn all the transports.
     """
 
-    def __init__(self, stateLocation, managedTransportVer, transports):
+    def __init__(self, stateLocation,
+                 managedTransportVer=SUPPORTED_TRANSPORT_VERSIONS,
+                 transports=[]):
         self.stateLocation = stateLocation
         self.managedTransportVer = managedTransportVer
         self.allTransportsEnabled = False

@@ -18,6 +18,7 @@ class TransportPlugin(object):
     def __init__(self, config=None, stdout=sys.stdout):
         self.config = config
         self.stdout = stdout
+        self.served_version = None # set by _declareSupports
         self.served_transports = None # set by _declareSupports
 
     def init(self, supported_transports):
@@ -52,18 +53,16 @@ class TransportPlugin(object):
         try:
             return self.configType.fromEnv()
         except EnvError, e:
-            print >>self.stdout, 'ENV-ERROR %s' % str(e)
-            self.stdout.flush()
+            self.emit('ENV-ERROR %s' % str(e))
             raise e
 
-    def _declareSupports(self, transports):
+    def _declareSupports(self, transports, versions=SUPPORTED_TRANSPORT_VERSIONS):
         """
         Declare to Tor the versions and transports that this PT supports.
 
-        :returns: {"transports": wanted_transports} -- The subset of the
-            declared inputs that were actually wanted by Tor.
+        :raises: :class:`pyptlib.config.EnvError` if this plugin does not support
+                any protocol version that Tor can communicate with us in.
         """
-        versions = SUPPORTED_TRANSPORT_VERSIONS
         cfg = self.config
 
         wanted_versions = [v for v in versions if v in cfg.managedTransportVer]
@@ -80,8 +79,8 @@ class TransportPlugin(object):
             # return able in priority-order determined by plugin
             wanted_transports = [t for t in transports if t in cfg.transports]
 
+        self.served_version = wanted_versions[0]
         self.served_transports = wanted_transports
-        return { 'transports': wanted_transports }
 
     def getServedTransports(self):
         """

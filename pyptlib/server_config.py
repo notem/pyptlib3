@@ -9,7 +9,7 @@ import pyptlib.config as config
 import pyptlib.util as util
 import sys
 
-from pyptlib.config import env_has_k, env_id
+from pyptlib.config import env_has_k, env_id, get_env
 
 class ServerConfig(config.Config):
     """
@@ -37,7 +37,7 @@ class ServerConfig(config.Config):
             if v == '': return None
             return util.parse_addr_spec(v)
 
-        extendedORPort = cls.getEnv('TOR_PT_EXTENDED_SERVER_PORT', empty_or_valid_addr)
+        extendedORPort = get_env('TOR_PT_EXTENDED_SERVER_PORT', empty_or_valid_addr)
 
         # Check that either both Extended ORPort and the Extended
         # ORPort Authentication Cookie are present, or neither.
@@ -49,10 +49,10 @@ class ServerConfig(config.Config):
             def validate_authcookie(k, v):
                 if v is not None: raise ValueError("Extended ORPort Authentication cookie file provided, but no Extended ORPort address.")
                 return v
-        authCookieFile = cls.getEnv('TOR_PT_AUTH_COOKIE_FILE', validate_authcookie)
+        authCookieFile = get_env('TOR_PT_AUTH_COOKIE_FILE', validate_authcookie)
 
         # Get ORPort.
-        ORPort = cls.getEnv('TOR_PT_ORPORT', empty_or_valid_addr)
+        ORPort = get_env('TOR_PT_ORPORT', empty_or_valid_addr)
 
         # Get bind addresses.
         def validate_server_bindaddr(k, bindaddrs):
@@ -63,7 +63,7 @@ class ServerConfig(config.Config):
                 (addr, port) = util.parse_addr_spec(addrport)
                 serverBindAddr[transport_name] = (addr, port)
             return serverBindAddr
-        serverBindAddr = cls.getEnv('TOR_PT_SERVER_BINDADDR', validate_server_bindaddr)
+        serverBindAddr = get_env('TOR_PT_SERVER_BINDADDR', validate_server_bindaddr)
 
         # Get transports.
         def validate_transports(k, transports):
@@ -73,11 +73,11 @@ class ServerConfig(config.Config):
             if t != b:
                 raise ValueError("Can't match transports with bind addresses (%s, %s)" % (t, b))
             return transports
-        transports = cls.getEnv('TOR_PT_SERVER_TRANSPORTS', validate_transports)
+        transports = get_env('TOR_PT_SERVER_TRANSPORTS', validate_transports)
 
         return cls(
-            stateLocation = cls.getEnv('TOR_PT_STATE_LOCATION'),
-            managedTransportVer = cls.getEnv('TOR_PT_MANAGED_TRANSPORT_VER').split(','),
+            stateLocation = get_env('TOR_PT_STATE_LOCATION'),
+            managedTransportVer = get_env('TOR_PT_MANAGED_TRANSPORT_VER').split(','),
             transports = transports,
             serverBindAddr = serverBindAddr,
             ORPort = ORPort,

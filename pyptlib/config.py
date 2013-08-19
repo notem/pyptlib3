@@ -65,27 +65,26 @@ class Config(object):
 
         return self.allTransportsEnabled
 
-    @classmethod
-    def getEnv(cls, key, validate=env_has_k):
-        """
-        Get the value of an environment variable.
+def get_env(key, validate=env_has_k):
+    """
+    Get the value of an environment variable.
 
-        :param str key: Environment variable key.
-        :param f validate: Function that takes a var and a value and returns
-            a transformed value if it is valid, or throws an exception.
-            If the environment does not define var, value is None. By default,
-            we return the value if the environment has the variable, otherwise
-            we raise a ValueError.
+    :param str key: Environment variable key.
+    :param f validate: Function that takes a var and a value and returns
+        a transformed value if it is valid, or throws an exception.
+        If the environment does not define var, value is None. By default,
+        we return the value if the environment has the variable, otherwise
+        we raise a ValueError.
 
-        :returns: str -- The value of the envrionment variable.
+    :returns: str -- The value of the envrionment variable.
 
-        :raises: :class:`pyptlib.config.EnvError` if environment variable could not be
-                found, or if it did not pass validation.
-        """
-        try:
-            return validate(key, os.getenv(key))
-        except Exception, e:
-            raise EnvError(cause=e)
+    :raises: :class:`pyptlib.config.EnvError` if environment variable could not be
+            found, or if it did not pass validation.
+    """
+    try:
+        return validate(key, os.getenv(key))
+    except Exception, e:
+        raise EnvError(cause=e)
 
 class EnvError(Exception):
     """

@@ -5,13 +5,14 @@
 
 import sys
 
-import pyptlib
-import pyptlib.client
+from pyptlib.client import ClientTransportPlugin
+from pyptlib.config import EnvError
 
 if __name__ == '__main__':
+    client = ClientTransportPlugin()
     try:
-        managed_info = pyptlib.client.init(["blackfish", "bluefish"])
-    except pyptlib.config.EnvError, err:
+        managed_info = client.init(["blackfish", "bluefish"])
+    except EnvError, err:
         print "pyptlib could not bootstrap ('%s')." % str(err)
         sys.exit(1)
 
@@ -26,7 +27,7 @@ if __name__ == '__main__':
             reportFailure(transport, "Failed to launch ('%s')." % str(err))
             continue
 
-        pyptlib.client.reportSuccess(transport, socks_version, bind_addrport, None, None)
+        client.reportMethodSuccess(transport, socks_version, bind_addrport, None, None)
 
     # After spawning our transports, report that we are done.
-    pyptlib.client.reportEnd()
+    client.reportMethodsEnd()

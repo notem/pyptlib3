@@ -30,38 +30,44 @@ An application using pyptlib should start by calling
 :func:`pyptlib.config.checkClientMode` to learn whether Tor wants it
 to run as a client or as a server.
 
+You should then create a :class:`pyptlib.client.ClientTransportPlugin`
+or :class:`pyptlib.server.ServerTransportPlugin` as appropriate. This
+object is your main entry point to the pyptlib API, so you should
+keep it somewhere for later access.
+
 1) Get transport information from Tor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If Tor wants the application to run as a client, the next step is to
-run :func:`pyptlib.client.init`. Otherwise, the application should run
-:func:`pyptlib.server.init`.
+The next step is to run :func:`init <pyptlib.core.TransportPlugin.init>`
+to parse the rest of the configuration and communicate the results
+to Tor. You should pass a list of names of the transports your
+application supports.
 
-:func:`init` expects to be passed a list with the names of the
-transports your application supports.
-
-The application should be prepared for
-:exc:`pyptlib.config.EnvError`, which signifies that the
-environment was not prepared by Tor.
-
-The application should store the return value of the :func:`init`
-function.
+The application should be prepared for :exc:`pyptlib.config.EnvError`,
+which signifies that the environment was not prepared by Tor.
 
 Consider an example of the fictional application *rot0r* which
-implements the pluggable transports *rot13* and *rot26*. If
-*rot0r*, in step 1, learned that Tor expects it to act as a client,
-it should now do:
+implements the pluggable transports *rot13* and *rot26*. If *rot0r*,
+in step 1, learned that Tor expects it to act as a client, it should
+now do:
 
 .. code-block::
    python
 
-   import pyptlib.client
-   import pyptlib.config
+   from pyptlib.client import ClientTransportPlugin
+   from pyptlib.config import EnvError
 
+   client = ClientTransportPlugin()
    try:
-       managed_info = pyptlib.client.init(["rot13", "rot26"])
-   except pyptlib.config.EnvError, err:
+       client.init(supported_transports=["rot13", "rot26"])
+   except EnvError, err:
        print "pyptlib could not bootstrap ('%s')." % str(err)
+
+Afterwards, the API's ``config`` attribute provides methods to find
+out how Tor wants your application to be configured. For example, if
+you store state, it should go in :func:`client.config.getStateLocation()
+<pyptlib.config.Config.getStateLocation>`. For a complete list, see
+the documentation for that module.
 
 2) Launch transports
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -69,26 +75,18 @@ it should now do:
 Client case (skip if you are a server)
 """""""""""""""""""""""""""""""""""""""""""
 
-If your application is a client, the return value of
-:func:`pyptlib.client.init` is a dictionary of the format:
-
-==========  ========== ==========
-Key         Type       Value
-==========  ========== ==========
-state_loc   string     Directory where the managed proxy should dump its state files (if needed).
-transports  list       Strings of the names of the transports that should be launched. The list can be empty.
-==========  ========== ==========
-
-Your application should then use the *transports* key to learn which transports it should launch.
+Your application should then use :func:`client.getServedTransports()
+<pyptlib.core.TransportPlugin.getServedTransports>` to learn which
+transports it should launch.
 
 Proceeding with the previous example:
 
 .. code-block::
    python
 
-   if 'rot13' in managed_info['transports']:
+   if 'rot13' in client.getServedTransports():
        launch_rot13_client()
-   if 'rot26' in managed_info['transports']:
+   if 'rot26' in client.getServedTransports():
        launch_rot26_client()
 
 
@@ -98,61 +96,55 @@ Proceeding with the previous example:
 Server case (skip if you are a client):
 """"""""""""""""""""""""""""""""""""""""""""
 
-If your application is a server, the return value of
-:func:`pyptlib.server.init` is a dictionary of the format:
+Your application should then use :func:`server.getServedBindAddresses()
+<pyptlib.server.ServerTransportPlugin.getServedBindAddresses>` to
+learn which transports it should launch.
 
-===============   ========== ==========
-Key               Type       Value
-================  ========== ==========
-state_loc         string     Directory where the managed proxy should dump its state files (if needed).
-orport            tuple      (ip,port) tuple pointing to Tor's ORPort.
-ext_orport        tuple      (ip,port) tuple pointing to Tor's Extended ORPort. None if Extended ORPort is not supported.
-transports        dict       A dictionary 'transport => (ip,port)' where 'transport' is the name of the transport that should be spawned, and '(ip,port)' is the location where the transport should bind. The dictionary can be empty.
-auth_cookie_file  string     Directory where the managed proxy should find the Extended ORPort authentication cookie.
-================  ========== ==========
-
-Your application should then use the *transports* key and attempt to
-launch the appropriate transports. Furthermore, since the application
-runs as a server, it should push data to Tor's ORPort. The TCP/IP
-location of the ORPort is provided in the *orport* key.
+Since the application runs as a server, it will push data to Tor's
+ORPort, which you can get using :func:`server.config.getORPort()
+<pyptlib.server_config.ServerConfig.getORPort>`.
 
 Proceeding with the previous example:
 
 .. code-block::
    python
 
-   if 'rot13' in managed_info['transports']:
-       launch_rot13_server(managed_info['transports']['rot13'], managed_info['orport'])
-   if 'rot26' in managed_info['transports']:
-       launch_rot26_server(managed_info['transports']['rot26'], managed_info['orport'])
+   transports = server.getServedBindAddresses()
+   if 'rot13' in transports:
+       launch_rot13_server(transports['rot13'], server.config.getORPort())
+   if 'rot26' in transports:
+       launch_rot26_server(transports['rot26'], server.config.getORPort())
 
 3) Report results back to Tor.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For every transport that the application launches, it reports to
-pyptlib whether it was launched successfully or not. This way, Tor is
-informed on whether a transport is expected to work or not.
+pyptlib whether it was launched successfully or not. This way, Tor
+is informed on whether a transport is expected to work or not.
 
 Client case (skip if you are a server):
 """"""""""""""""""""""""""""""""""""""""""""
 
-Everytime a transport is successfully launched, the application calls
-:func:`pyptlib.client.reportSuccess` with the name of the transport
-that was launched, the address where it is listening for connections,
-and the SOCKS version that the upstream SOCKS server supports.
+Every time a transport is successfully launched, the application
+calls :func:`client.reportMethodSuccess
+<pyptlib.client.ClientTransportPlugin.reportMethodSuccess>` with the
+name of the transport that was launched, the address where it is
+listening for connections, and the SOCKS version that the upstream
+SOCKS server supports.
 
 For example, if *rot13* was launched successfully, waits for
-connections in '127.0.0.1:42042' and supports SOCKSv4, the appropriate
-call would be:
+connections in '127.0.0.1:42042' and supports SOCKSv4, the
+appropriate call would be:
 
 .. code-block::
    python
 
-   pyptlib.client.reportSuccess('rot13', 5, ('127.0.0.1', 42042))
+   client.reportMethodSuccess('rot13', 5, ('127.0.0.1', 42042))
 
-Everytime a transport failed to launch, the application calls
-:func:`pyptlib.client.reportFailure` with the name of the transport
-and a message.
+Every time a transport failed to launch, the application calls
+:func:`client.reportMethodError
+<pyptlib.core.TransportPlugin.reportMethodError>` with the name of
+the transport and a message.
 
 For example, if *rot26* failed to launch, the appropriate call
 would be:
@@ -160,14 +152,16 @@ would be:
 .. code-block::
    python
 
-   pyptlib.client.reportFailure('rot26', 'Could not bind to 127.0.0.1:666 (Operation not permitted)')
+   client.reportMethodError('rot26', 'Could not bind to 127.0.0.1:666 (Operation not permitted)')
 
 Server case (skip if you are a client):
 """"""""""""""""""""""""""""""""""""""""""""
 
-Everytime a transport is successfully launched, the application calls
-:func:`pyptlib.server.reportSuccess` with the name of the transport
-that was launched, and the address where it is listening for connections.
+Everytime a transport is successfully launched, the application
+calls :func:`server.reportMethodSuccess
+<pyptlib.server.ServerTransportPlugin.reportMethodSuccess>` with the
+name of the transport that was launched, and the address where it is
+listening for connections.
 
 For example, if *rot13* was launched successfully and waits for
 connections in '127.0.0.1:42042', the appropriate call would be:
@@ -175,11 +169,12 @@ connections in '127.0.0.1:42042', the appropriate call would be:
 .. code-block::
    python
 
-   pyptlib.server.reportSuccess('rot13', ('127.0.0.1', 42042))
+   server.reportMethodSuccess('rot13', ('127.0.0.1', 42042))
 
-Everytime a transport failed to launch, the application calls
-:func:`pyptlib.server.reportFailure` with the name of the transport
-and a message.
+Everytime a transport failed to launch, the application should call
+:func:`server.reportMethodError
+<pyptlib.core.TransportPlugin.reportMethodError>` with the name of
+the transport and a message.
 
 For example, if *rot26* failed to launch, the appropriate call
 would be:
@@ -187,15 +182,16 @@ would be:
 .. code-block::
    python
 
-   pyptlib.server.reportFailure('rot26', 'Could not bind to 127.0.0.1:666 (Operation not permitted)')
+   server.reportMethodError('rot26', 'Could not bind to 127.0.0.1:666 (Operation not permitted)')
 
 4) Stop using pyptlib and start accepting connections
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When the application finishes launching connections, it should call
-:func:`pyptlib.client.reportEnd` (or
-:func:`pyptlib.server.reportEnd`), to announce to pyptlib that all
-transports were launched. This way, Tor knows that it can start
-pushing traffic to the application.
+:func:`reportMethodsEnd()
+<pyptlib.core.TransportPlugin.reportMethodsEnd>`, to announce to
+pyptlib that all transports were launched. This way, Tor knows that
+it can start pushing traffic to the application.
 
-After this point, pyptlib has no other use.
+After this point, the API object (in this current version of pyptlib)
+has no other use.

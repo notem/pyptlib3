@@ -85,6 +85,16 @@ class TransportPlugin(object):
         self.served_transports = wanted_transports
         return { 'transports': wanted_transports }
 
+    def getServedTransports(self):
+        """
+        Return the names of the transports that this plugin is serving.
+
+        :raises: :class:`ValueError` if called before :func:`init`.
+        """
+        if self.served_transports is None:
+            raise ValueError("init not yet called")
+        return self.served_transports
+
     def reportMethodError(self, name, message):
         """
         Write a message to stdout announcing that we failed to launch a transport.

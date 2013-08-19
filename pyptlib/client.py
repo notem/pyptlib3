@@ -44,7 +44,7 @@ def init(supported_transports):
     client.init(supported_transports)
     retval = {}
     retval['state_loc'] = client.config.getStateLocation()
-    retval['transports'] = client.served_transports
+    retval['transports'] = client.getServedTransports()
 
     return retval
 

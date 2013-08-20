@@ -3,7 +3,7 @@ Changes in version 0.0.4 - UNRELEASED
    write composed plugins such as obfs-flash, and the 2-INT termination
    behaviour specified in the PT spec.
  - Present a more object-oriented public API, and refactor internals to
-   have better separation of concerns,
+   have better separation of concerns. Add a more complete set of tests.
 
 
 Changes in version 0.0.3 - 2013-02-18

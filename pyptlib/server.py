@@ -35,9 +35,8 @@ class ServerTransportPlugin(TransportPlugin):
 
     def getServedBindAddresses(self):
         """
-        Return the names of the transports that this plugin is serving, each
-        mapped to '(ip,port)' of the location where the transport should bind.
-
+        :returns: dict of names of the transports that this plugin can serve,
+            each mapped to the (ip,port) where the transport should bind.
         :raises: :class:`ValueError` if called before :func:`init`.
         """
         return dict((k, v)

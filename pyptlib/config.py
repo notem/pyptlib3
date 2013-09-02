@@ -11,17 +11,12 @@ SUPPORTED_TRANSPORT_VERSIONS = ['1']
 
 def env_has_k(k, v):
     """
-    A validator for Config.getEnv that returns the value of the envvar if it
-    was found, or throws ValueError if it was not.
+    Default validator for :func:`get_env`.
+
+    :returns: str -- The value of the envvar `k` if it is set.
+    :raises: :class:`ValueError` if `k` was not found.
     """
     if v is None: raise ValueError('Missing environment variable %s' % k)
-    return v
-
-def env_id(_, v):
-    """
-    A validator for Config.getEnv that returns the value of the envvar if it
-    was found, or None if it was not.
-    """
     return v
 
 class Config(object):
@@ -74,14 +69,13 @@ def get_env(key, validate=env_has_k):
     Get the value of an environment variable.
 
     :param str key: Environment variable key.
-    :param f validate: Function that takes a var and a value and returns
-        a transformed value if it is valid, or throws an exception.
-        If the environment does not define var, value is None. By default,
-        we return the value if the environment has the variable, otherwise
-        we raise a ValueError.
+    :param f validate: Function that takes a `var` and a `value`, and returns
+        a (maybe transformed) value if it is valid, or throws an exception.
+        If the environment does not set `var`, `value` is passed in as `None`.
+        The default validator is :func:`env_has_k` which passes any value
+        which is set (i.e. not `None`).
 
     :returns: str -- The value of the envrionment variable.
-
     :raises: :class:`pyptlib.config.EnvError` if environment variable could not be
             found, or if it did not pass validation.
     """
@@ -106,7 +100,8 @@ def checkClientMode():
     Read the environment and return true if we are supposed to be a
     client. Return false if we are supposed to be a server.
 
-    Raise EnvError if the environment was not properly set up.
+    :raises: :class:`pyptlib.config.EnvError` if the environment was not
+             properly set up
     """
     if 'TOR_PT_CLIENT_TRANSPORTS' in os.environ: return True
     if 'TOR_PT_SERVER_TRANSPORTS' in os.environ: return False

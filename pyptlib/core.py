@@ -89,8 +89,7 @@ class TransportPlugin(object):
 
     def getServedTransports(self):
         """
-        Return the names of the transports that this plugin is serving.
-
+        :returns: list of names of the transports that this plugin can serve.
         :raises: :class:`ValueError` if called before :func:`init`.
         """
         if self.served_transports is None:

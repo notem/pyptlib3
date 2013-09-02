@@ -28,9 +28,8 @@ class ServerConfig(config.Config):
         :raises: :class:`pyptlib.config.EnvError` if environment was incomplete or corrupted.
         """
 
-        # TOR_PT_EXTENDED_SERVER_PORT is optional; tor uses the empty
-        # string as its value if it does not support the Extended
-        # ORPort.
+        # TOR_PT_EXTENDED_SERVER_PORT is set and empty if Tor does not support
+        # the Extended ORPort.
         def empty_or_valid_addr(k, v):
             v = env_has_k(k, v)
             if v == '': return None

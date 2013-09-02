@@ -12,9 +12,13 @@ class TransportPlugin(object):
 
     :var pyptlib.config.Config config: Configuration passed from Tor.
     :var file stdout: Output file descriptor to send status messages to.
+    :var str served_version: Version used by the plugin.
     :var list served_transports: List of transports served by the plugin,
             populated by init().
     """
+    configType = None
+    methodName = None
+
     def __init__(self, config=None, stdout=sys.stdout):
         self.config = config
         self.stdout = stdout
@@ -56,7 +60,7 @@ class TransportPlugin(object):
             self.emit('ENV-ERROR %s' % str(e))
             raise e
 
-    def _declareSupports(self, transports, versions=SUPPORTED_TRANSPORT_VERSIONS):
+    def _declareSupports(self, transports, versions=None):
         """
         Declare to Tor the versions and transports that this PT supports.
 
@@ -65,6 +69,7 @@ class TransportPlugin(object):
         """
         cfg = self.config
 
+        versions = versions or SUPPORTED_TRANSPORT_VERSIONS
         wanted_versions = [v for v in versions if v in cfg.managedTransportVer]
         if not wanted_versions:
             self.emit('VERSION-ERROR no-version')

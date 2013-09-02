@@ -5,7 +5,7 @@ from cStringIO import StringIO
 
 from pyptlib.config import EnvError, Config
 
-class PluginCoreTest(object):
+class PluginCoreTestMixin(object):
     """
     This class is not a TestCase but is meant to be mixed-into tests
     for subclasses of TransportPlugin.

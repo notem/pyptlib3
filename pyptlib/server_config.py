@@ -7,9 +7,8 @@ Low-level parts of pyptlib that are only useful to servers.
 
 import pyptlib.config as config
 import pyptlib.util as util
-import sys
 
-from pyptlib.config import env_has_k, env_id, get_env, SUPPORTED_TRANSPORT_VERSIONS
+from pyptlib.config import env_has_k, get_env, SUPPORTED_TRANSPORT_VERSIONS
 
 class ServerConfig(config.Config):
     """
@@ -42,11 +41,11 @@ class ServerConfig(config.Config):
         # Check that either both Extended ORPort and the Extended
         # ORPort Authentication Cookie are present, or neither.
         if extendedORPort:
-            def validate_authcookie(k, v):
+            def validate_authcookie(_, v):
                 if v is None: raise ValueError("Extended ORPort address provided, but no cookie file.")
                 return v
         else:
-            def validate_authcookie(k, v):
+            def validate_authcookie(_, v):
                 if v is not None: raise ValueError("Extended ORPort Authentication cookie file provided, but no Extended ORPort address.")
                 return v
         authCookieFile = get_env('TOR_PT_AUTH_COOKIE_FILE', validate_authcookie)
@@ -86,15 +85,16 @@ class ServerConfig(config.Config):
             )
 
     def __init__(self, stateLocation,
-                 managedTransportVer=SUPPORTED_TRANSPORT_VERSIONS,
-                 transports=[],
-                 serverBindAddr={},
+                 managedTransportVer=None,
+                 transports=None,
+                 serverBindAddr=None,
                  ORPort=None,
                  extendedORPort=None,
                  authCookieFile=None):
-        config.Config.__init__(self,
-            stateLocation, managedTransportVer, transports)
-        self.serverBindAddr = serverBindAddr
+        config.Config.__init__(self, stateLocation,
+            managedTransportVer or SUPPORTED_TRANSPORT_VERSIONS,
+            transports or [])
+        self.serverBindAddr = serverBindAddr or {}
         self.ORPort = ORPort
         self.extendedORPort = extendedORPort
         self.authCookieFile = authCookieFile

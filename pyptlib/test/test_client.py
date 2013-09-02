@@ -3,9 +3,9 @@ import unittest
 
 from pyptlib.client import ClientTransportPlugin
 from pyptlib.config import EnvError, Config
-from pyptlib.test.test_core import PluginCoreTest
+from pyptlib.test.test_core import PluginCoreTestMixin
 
-class testClient(PluginCoreTest, unittest.TestCase):
+class testClient(PluginCoreTestMixin, unittest.TestCase):
     pluginType = ClientTransportPlugin
 
     def test_fromEnv_legit(self):

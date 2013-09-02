@@ -3,7 +3,7 @@ import unittest
 
 from pyptlib.config import EnvError, Config
 from pyptlib.server import ServerTransportPlugin
-from pyptlib.test.test_core import PluginCoreTest
+from pyptlib.test.test_core import PluginCoreTestMixin
 from pyptlib.core import SUPPORTED_TRANSPORT_VERSIONS
 
 # a good valid environment to base modifications from
@@ -17,7 +17,7 @@ BASE_ENVIRON = {
     "TOR_PT_SERVER_TRANSPORTS" : "dummy,boom"
 }
 
-class testServer(PluginCoreTest, unittest.TestCase):
+class testServer(PluginCoreTestMixin, unittest.TestCase):
     pluginType = ServerTransportPlugin
 
     def test_fromEnv_legit(self):

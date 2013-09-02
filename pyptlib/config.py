@@ -17,7 +17,7 @@ def env_has_k(k, v):
     if v is None: raise ValueError('Missing environment variable %s' % k)
     return v
 
-def env_id(k, v):
+def env_id(_, v):
     """
     A validator for Config.getEnv that returns the value of the envvar if it
     was found, or None if it was not.
@@ -35,10 +35,11 @@ class Config(object):
     """
 
     def __init__(self, stateLocation,
-                 managedTransportVer=SUPPORTED_TRANSPORT_VERSIONS,
-                 transports=[]):
+                 managedTransportVer=None,
+                 transports=None):
         self.stateLocation = stateLocation
-        self.managedTransportVer = managedTransportVer
+        self.managedTransportVer = managedTransportVer or SUPPORTED_TRANSPORT_VERSIONS
+        transports = transports or []
         self.allTransportsEnabled = False
         if '*' in transports:
             self.allTransportsEnabled = True

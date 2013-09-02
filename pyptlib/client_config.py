@@ -5,8 +5,6 @@
 Low-level parts of pyptlib that are only useful to clients.
 """
 
-import sys
-
 from pyptlib.config import Config, get_env
 
 class ClientConfig(Config):

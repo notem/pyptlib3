@@ -87,7 +87,7 @@ class TransportPlugin(object):
         self.served_version = wanted_versions[0]
         self.served_transports = wanted_transports
 
-    def getServedTransports(self):
+    def getTransports(self):
         """
         :returns: list of names of the transports that this plugin can serve.
         :raises: :class:`ValueError` if called before :func:`init`.

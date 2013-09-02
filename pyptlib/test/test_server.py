@@ -137,7 +137,7 @@ class testServer(PluginCoreTestMixin, unittest.TestCase):
         """Correct Extended ORPort configuration."""
         os.environ = BASE_ENVIRON
         self.plugin.init(["dummy", "boom"])
-        bindaddr = self.plugin.getServedBindAddresses()
+        bindaddr = self.plugin.getBindAddresses()
         self.assertEquals(bindaddr["dummy"], ('127.0.0.1', 5556))
         self.assertEquals(bindaddr["boom"], ('127.0.0.1', 6666))
         self.assertOutputLinesStartWith("VERSION ")

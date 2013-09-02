@@ -33,15 +33,15 @@ class ServerTransportPlugin(TransportPlugin):
             self.emit('SMETHOD %s %s:%s' % (name, addrport[0],
                       addrport[1]))
 
-    def getServedBindAddresses(self):
+    def getBindAddresses(self):
         """
         :returns: dict of names of the transports that this plugin can serve,
             each mapped to the (ip,port) where the transport should bind.
         :raises: :class:`ValueError` if called before :func:`init`.
         """
         return dict((k, v)
-                    for k, v in self.config.getServerBindAddresses().items()
-                    if k in self.getServedTransports())
+                    for k, v in self.config.serverBindAddr.iteritems()
+                    if k in self.getTransports())
 
 
 def init(supported_transports):
@@ -53,7 +53,7 @@ def init(supported_transports):
     retval['state_loc'] = config.getStateLocation()
     retval['orport'] = config.getORPort()
     retval['ext_orport'] = config.getExtendedORPort()
-    retval['transports'] = server.getServedBindAddresses()
+    retval['transports'] = server.getBindAddresses()
     retval['auth_cookie_file'] = config.getAuthCookieFile()
 
     return retval

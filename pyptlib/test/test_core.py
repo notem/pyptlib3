@@ -58,19 +58,19 @@ class PluginCoreTestMixin(object):
         """Unknown transports"""
         self.installTestConfig(transports="are,you,a,badfish,too?".split(","))
         self.plugin._declareSupports(["not_any_of_above"])
-        self.assertEmpty(self.plugin.getServedTransports())
+        self.assertEmpty(self.plugin.getTransports())
         self.assertOutputLinesStartWith("VERSION ")
 
     def test_declareSupports_partial(self):
         """Partial transports"""
         self.installTestConfig(transports="are,you,a,badfish,too?".split(","))
         self.plugin._declareSupports(["badfish", "not_any_of_above"])
-        self.assertEquals(self.plugin.getServedTransports(), ["badfish"])
+        self.assertEquals(self.plugin.getTransports(), ["badfish"])
         self.assertOutputLinesStartWith("VERSION ")
 
-    def test_getServedTransports_noinit(self):
-        """getServerTransports raises correctly."""
-        self.assertRaises(ValueError, self.plugin.getServedTransports)
+    def test_getTransports_noinit(self):
+        """getTransports raises correctly."""
+        self.assertRaises(ValueError, self.plugin.getTransports)
 
     def test_init_passthru_loadConfigFromEnv_error(self):
         """init passes-through errors from loadConfigFromEnv."""
@@ -79,10 +79,10 @@ class PluginCoreTestMixin(object):
         self.assertOutputLinesStartWith("ENV-ERROR ")
 
     def test_init_correct_servedTransports(self):
-        """init results in correct getServerTransports."""
+        """init results in correct getTransports."""
         self.installTestConfig(transports=["yeayeayea"])
         self.plugin.init(["yeayeayea"])
-        self.assertEquals(["yeayeayea"], self.plugin.getServedTransports())
+        self.assertEquals(["yeayeayea"], self.plugin.getTransports())
         self.assertOutputLinesStartWith("VERSION ")
 
 class DummyConfig(Config):

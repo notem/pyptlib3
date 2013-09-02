@@ -110,18 +110,6 @@ class ServerConfig(config.Config):
         """
         return self.ORPort
 
-    def getServerBindAddresses(self):
-        """
-        :returns: :attr:`pyptlib.server_config.ServerConfig.serverBindAddr`
-        """
-        return self.serverBindAddr
-
-    def getServerTransports(self):
-        """
-        :returns: :attr:`pyptlib.config.Config.transports`
-        """
-        return self.transports
-
     def getAuthCookieFile(self):
         """
         :returns: :attr:`pyptlib.server_config.ServerConfig.authCookieFile`

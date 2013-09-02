@@ -75,8 +75,8 @@ the documentation for that module.
 Client case (skip if you are a server)
 """""""""""""""""""""""""""""""""""""""""""
 
-Your application should then use :func:`client.getServedTransports()
-<pyptlib.core.TransportPlugin.getServedTransports>` to learn which
+Your application should then use :func:`client.getTransports()
+<pyptlib.core.TransportPlugin.getTransports>` to learn which
 transports it should launch.
 
 Proceeding with the previous example:
@@ -84,9 +84,9 @@ Proceeding with the previous example:
 .. code-block::
    python
 
-   if 'rot13' in client.getServedTransports():
+   if 'rot13' in client.getTransports():
        launch_rot13_client()
-   if 'rot26' in client.getServedTransports():
+   if 'rot26' in client.getTransports():
        launch_rot26_client()
 
 
@@ -96,8 +96,8 @@ Proceeding with the previous example:
 Server case (skip if you are a client):
 """"""""""""""""""""""""""""""""""""""""""""
 
-Your application should then use :func:`server.getServedBindAddresses()
-<pyptlib.server.ServerTransportPlugin.getServedBindAddresses>` to
+Your application should then use :func:`server.getBindAddresses()
+<pyptlib.server.ServerTransportPlugin.getBindAddresses>` to
 learn which transports it should launch.
 
 Since the application runs as a server, it will push data to Tor's
@@ -109,7 +109,7 @@ Proceeding with the previous example:
 .. code-block::
    python
 
-   transports = server.getServedBindAddresses()
+   transports = server.getBindAddresses()
    if 'rot13' in transports:
        launch_rot13_server(transports['rot13'], server.config.getORPort())
    if 'rot26' in transports:

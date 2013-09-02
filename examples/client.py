@@ -11,12 +11,12 @@ from pyptlib.config import EnvError
 if __name__ == '__main__':
     client = ClientTransportPlugin()
     try:
-        managed_info = client.init(["blackfish", "bluefish"])
+        client.init(["blackfish", "bluefish"])
     except EnvError, err:
         print "pyptlib could not bootstrap ('%s')." % str(err)
         sys.exit(1)
 
-    for transport in managed_info['transports']:
+    for transport in client.getTransports():
         # Spawn all the transports in the list, and for each spawned
         # transport report back the port where it is listening, and
         # the SOCKS version it supports.

@@ -11,12 +11,12 @@ from pyptlib.config import EnvError
 if __name__ == '__main__':
     server = ServerTransportPlugin()
     try:
-        managed_info = server.init(["blackfish", "bluefish"])
+        server.init(["blackfish", "bluefish"])
     except EnvError, err:
         print "pyptlib could not bootstrap ('%s')." % str(err)
         sys.exit(1)
 
-    for transport, transport_bindaddr in managed_info['transports'].items():
+    for transport, transport_bindaddr in server.getBindAddresses().items():
         # Try to spawn transports and make them listen in the ports
         # that Tor wants. Report failure or success appropriately.
 

@@ -139,7 +139,7 @@ appropriate call would be:
 .. code-block::
    python
 
-   client.reportMethodSuccess('rot13', 5, ('127.0.0.1', 42042))
+   client.reportMethodSuccess('rot13', 'socks5', ('127.0.0.1', 42042))
 
 Every time a transport failed to launch, the application calls
 :func:`client.reportMethodError

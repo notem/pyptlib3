@@ -16,19 +16,19 @@ class ClientTransportPlugin(TransportPlugin):
     configType = ClientConfig
     methodName = 'CMETHOD'
 
-    def reportMethodSuccess(self, name, socksVersion, addrport, args=None, optArgs=None):
+    def reportMethodSuccess(self, name, protocol, addrport, args=None, optArgs=None):
         """
         Write a message to stdout announcing that a transport was
         successfully launched.
 
         :param str name: Name of transport.
-        :param int socksVersion: The SOCKS protocol version.
+        :param str protocol: Name of protocol to communicate using.
         :param tuple addrport: (addr,port) where this transport is listening for connections.
         :param str args: ARGS field for this transport.
         :param str optArgs: OPT-ARGS field for this transport.
         """
 
-        methodLine = 'CMETHOD %s socks%s %s:%s' % (name, socksVersion,
+        methodLine = 'CMETHOD %s %s %s:%s' % (name, protocol,
                 addrport[0], addrport[1])
         if args and len(args) > 0:
             methodLine = methodLine + ' ARGS=' + args.join(',')
@@ -51,7 +51,7 @@ def init(supported_transports):
 def reportSuccess(name, socksVersion, addrport, args=None, optArgs=None):
     """DEPRECATED. Use ClientTransportPlugin().reportMethodSuccess() instead."""
     config = ClientTransportPlugin()
-    config.reportMethodSuccess(name, socksVersion, addrport, args, optArgs)
+    config.reportMethodSuccess(name, "socks%s" % socksVersion, addrport, args, optArgs)
 
 def reportFailure(name, message):
     """DEPRECATED. Use ClientTransportPlugin().reportMethodError() instead."""

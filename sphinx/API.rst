@@ -89,6 +89,9 @@ Proceeding with the previous example:
    if 'rot26' in client.getTransports():
        launch_rot26_client()
 
+For a full list of the methods available, see the module docs for :class:`client
+<pyptlib.client.ClientTransportPlugin>` and :class:`client.config
+<pyptlib.client_config.ClientConfig>`.
 
 .. note:: Since the application runs as a client, it should launch a
           SOCKS server in the upstream side of the proxy.
@@ -114,6 +117,10 @@ Proceeding with the previous example:
        launch_rot13_server(transports['rot13'], server.config.getORPort())
    if 'rot26' in transports:
        launch_rot26_server(transports['rot26'], server.config.getORPort())
+
+For a full list of the methods available, see the module docs for :class:`server
+<pyptlib.server.ServerTransportPlugin>` and :class:`server.config
+<pyptlib.server_config.ServerConfig>`.
 
 3) Report results back to Tor.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

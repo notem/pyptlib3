@@ -144,21 +144,21 @@ class testServer(PluginCoreTestMixin, unittest.TestCase):
         self.assertOutputLinesStartWith("VERSION ")
 
 class testUtils(unittest.TestCase):
-    def test_validate_transport_options_wrong(self):
+    def test_get_transport_options_wrong(self):
         """Invalid options string"""
         to_parse = "trebuchet_secret=nou"
-        self.assertRaises(ValueError, validate_transport_options, to_parse)
+        self.assertRaises(ValueError, get_transport_options_impl, to_parse)
 
-    def test_validate_transport_options_wrong_2(self):
+    def test_get_transport_options_wrong_2(self):
         """No k=v value"""
         to_parse = "trebuchet:secret~nou"
-        self.assertRaises(ValueError, validate_transport_options, to_parse)
+        self.assertRaises(ValueError, get_transport_options_impl, to_parse)
 
-    def test_validate_transport_options_correct(self):
+    def test_get_transport_options_correct(self):
         to_parse = "trebuchet:secret=nou;trebuchet:cache=/tmp/cache;ballista:secret=yes;ballista:fun=no;archer:bow=yes"
         expected = {"trebuchet" : {"secret" : "nou", "cache" : "/tmp/cache"} , "ballista" : {"secret" : "yes", "fun" : "no"}, "archer" : {"bow" : "yes" } }
 
-        result = validate_transport_options(to_parse)
+        result = get_transport_options_impl(to_parse)
         self.assertEquals(result, expected) # XXX does this check iteratables?
 
 if __name__ == '__main__':

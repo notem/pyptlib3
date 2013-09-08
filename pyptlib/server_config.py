@@ -10,7 +10,7 @@ import pyptlib.util as util
 
 from pyptlib.config import env_has_k, get_env, SUPPORTED_TRANSPORT_VERSIONS
 
-def validate_transport_options(string):
+def get_transport_options_impl(string):
     """
     Parse transport options.
     :param str optstring: Example input: 'scramblesuit:k=v;scramblesuit:k2=v2;obs3fs:k=v'
@@ -69,20 +69,20 @@ class ServerConfig(config.Config):
         # Check that either both Extended ORPort and the Extended
         # ORPort Authentication Cookie are present, or neither.
         if extendedORPort:
-            def validate_authcookie(_, v):
+            def get_authcookie(_, v):
                 if v is None: raise ValueError("Extended ORPort address provided, but no cookie file.")
                 return v
         else:
-            def validate_authcookie(_, v):
+            def get_authcookie(_, v):
                 if v is not None: raise ValueError("Extended ORPort Authentication cookie file provided, but no Extended ORPort address.")
                 return v
-        authCookieFile = get_env('TOR_PT_AUTH_COOKIE_FILE', validate_authcookie)
+        authCookieFile = get_env('TOR_PT_AUTH_COOKIE_FILE', get_authcookie)
 
         # Get ORPort.
         ORPort = get_env('TOR_PT_ORPORT', empty_or_valid_addr)
 
         # Get bind addresses.
-        def validate_server_bindaddr(k, bindaddrs):
+        def get_server_bindaddr(k, bindaddrs):
             serverBindAddr = {}
             bindaddrs = env_has_k(k, bindaddrs).split(',')
             for bindaddr in bindaddrs:
@@ -90,24 +90,24 @@ class ServerConfig(config.Config):
                 (addr, port) = util.parse_addr_spec(addrport)
                 serverBindAddr[transport_name] = (addr, port)
             return serverBindAddr
-        serverBindAddr = get_env('TOR_PT_SERVER_BINDADDR', validate_server_bindaddr)
+        serverBindAddr = get_env('TOR_PT_SERVER_BINDADDR', get_server_bindaddr)
 
         # Get transports.
-        def validate_transports(k, transports):
+        def get_transports(k, transports):
             transports = env_has_k(k, transports).split(',')
             t = sorted(transports)
             b = sorted(serverBindAddr.keys())
             if t != b:
                 raise ValueError("Can't match transports with bind addresses (%s, %s)" % (t, b))
             return transports
-        transports = get_env('TOR_PT_SERVER_TRANSPORTS', validate_transports)
+        transports = get_env('TOR_PT_SERVER_TRANSPORTS', get_transports)
 
-        def validate_transport_options(k, v):
+        def get_transport_options(k, v):
             if v is None:
                 return None
             serverTransportOptions = env_has_k(k, v)
-            return validate_transport_options(serverTransportOptions)
-        transport_options = get_env('TOR_PT_SERVER_TRANSPORT_OPTIONS', validate_transport_options)
+            return get_transport_options_impl(serverTransportOptions)
+        transport_options = get_env('TOR_PT_SERVER_TRANSPORT_OPTIONS', get_transport_options)
 
         return cls(
             stateLocation = get_env('TOR_PT_STATE_LOCATION'),

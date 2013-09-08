@@ -10,6 +10,33 @@ import pyptlib.util as util
 
 from pyptlib.config import env_has_k, get_env, SUPPORTED_TRANSPORT_VERSIONS
 
+def validate_transport_options(string):
+    """
+    Parse transport options.
+    :param str optstring: Example input: 'scramblesuit:k=v;scramblesuit:k2=v2;obs3fs:k=v'
+    :returns: {'obfs3': {'k':'v'}, 'scramblesuit': {'k2' : 'v2', 'k' : 'v'} }
+    """
+    transport_args = {}
+
+    params = string.split(';')
+    for param in params:
+        try:
+            (name, kv_string) = param.split(':')
+        except ValueError:
+            raise ValueError("Invalid options string (%s)" % param)
+
+        if name not in transport_args:
+            transport_args[name] = {}
+
+        try:
+            (key, value) = kv_string.split('=')
+        except ValueError:
+            raise ValueError("Not a k=v value (%s)" % kv_string)
+
+        transport_args[name][key] = value
+
+    return transport_args
+
 class ServerConfig(config.Config):
     """
     A client-side pyptlib configuration.
@@ -18,6 +45,8 @@ class ServerConfig(config.Config):
     :var tuple extendedORPort: (ip,port) pointing to Tor's Extended ORPort. None if Extended ORPort is not supported.
     :var dict serverBindAddr: A dictionary {<transport> : [<addr>, <port>]}, where <transport> is the name of the transport that must be spawned, and [<addr>, <port>] is a list containing the location where that transport should bind. The dictionary can be empty.
     :var string authCookieFile: String representing the filesystem path where the Extended ORPort Authentication cookie is stored. None if Extended ORPort authentication is not supported.
+    :var dict serverTransportOptions: Dictionary containing user-provided parameters that must be passed to the pluggable transports.
+        Example: {'obfs3': {'k':'v'}, 'scramblesuit': {'k2' : 'v2', 'k' : 'v'} }
     """
 
     @classmethod
@@ -73,6 +102,13 @@ class ServerConfig(config.Config):
             return transports
         transports = get_env('TOR_PT_SERVER_TRANSPORTS', validate_transports)
 
+        def validate_transport_options(k, v):
+            if v is None:
+                return None
+            serverTransportOptions = env_has_k(k, v)
+            return validate_transport_options(serverTransportOptions)
+        transport_options = get_env('TOR_PT_SERVER_TRANSPORT_OPTIONS', validate_transport_options)
+
         return cls(
             stateLocation = get_env('TOR_PT_STATE_LOCATION'),
             managedTransportVer = get_env('TOR_PT_MANAGED_TRANSPORT_VER').split(','),
@@ -80,7 +116,8 @@ class ServerConfig(config.Config):
             serverBindAddr = serverBindAddr,
             ORPort = ORPort,
             extendedORPort = extendedORPort,
-            authCookieFile = authCookieFile
+            authCookieFile = authCookieFile,
+            serverTransportOptions = transport_options
             )
 
     def __init__(self, stateLocation,
@@ -89,7 +126,8 @@ class ServerConfig(config.Config):
                  serverBindAddr=None,
                  ORPort=None,
                  extendedORPort=None,
-                 authCookieFile=None):
+                 authCookieFile=None,
+                 serverTransportOptions=None):
         config.Config.__init__(self, stateLocation,
             managedTransportVer or SUPPORTED_TRANSPORT_VERSIONS,
             transports or [])
@@ -97,6 +135,7 @@ class ServerConfig(config.Config):
         self.ORPort = ORPort
         self.extendedORPort = extendedORPort
         self.authCookieFile = authCookieFile
+        self.serverTransportOptions = serverTransportOptions
 
     def getExtendedORPort(self):
         """
@@ -115,3 +154,9 @@ class ServerConfig(config.Config):
         :returns: :attr:`pyptlib.server_config.ServerConfig.authCookieFile`
         """
         return self.authCookieFile
+
+    def getServerTransportOptions(self):
+        """
+        :returns: :attr:`pyptlib.server_config.ServerConfig.serverTransportOptions`
+        """
+        return self.serverTransportOptions

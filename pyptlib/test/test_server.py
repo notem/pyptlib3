@@ -2,6 +2,7 @@ import os
 import unittest
 
 from pyptlib.config import EnvError, Config
+from pyptlib.server_config import validate_transport_options
 from pyptlib.server import ServerTransportPlugin
 from pyptlib.test.test_core import PluginCoreTestMixin
 from pyptlib.core import SUPPORTED_TRANSPORT_VERSIONS
@@ -141,6 +142,24 @@ class testServer(PluginCoreTestMixin, unittest.TestCase):
         self.assertEquals(bindaddr["dummy"], ('127.0.0.1', 5556))
         self.assertEquals(bindaddr["boom"], ('127.0.0.1', 6666))
         self.assertOutputLinesStartWith("VERSION ")
+
+class testUtils(unittest.TestCase):
+    def test_validate_transport_options_wrong(self):
+        """Invalid options string"""
+        to_parse = "trebuchet_secret=nou"
+        self.assertRaises(ValueError, validate_transport_options, to_parse)
+
+    def test_validate_transport_options_wrong_2(self):
+        """No k=v value"""
+        to_parse = "trebuchet:secret~nou"
+        self.assertRaises(ValueError, validate_transport_options, to_parse)
+
+    def test_validate_transport_options_correct(self):
+        to_parse = "trebuchet:secret=nou;trebuchet:cache=/tmp/cache;ballista:secret=yes;ballista:fun=no;archer:bow=yes"
+        expected = {"trebuchet" : {"secret" : "nou", "cache" : "/tmp/cache"} , "ballista" : {"secret" : "yes", "fun" : "no"}, "archer" : {"bow" : "yes" } }
+
+        result = validate_transport_options(to_parse)
+        self.assertEquals(result, expected) # XXX does this check iteratables?
 
 if __name__ == '__main__':
     unittest.main()

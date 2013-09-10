@@ -1,4 +1,4 @@
-Changes in version 0.0.4 - UNRELEASED
+Changes in version 0.0.4 - 2013-09-11
  - Add a subprocess management module, which should make it easier to
    write composed plugins such as obfs-flash, and the 2-INT termination
    behaviour specified in the PT spec.

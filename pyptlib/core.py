@@ -108,10 +108,20 @@ class TransportPlugin(object):
 
     def reportMethodsEnd(self):
         """
-        Write a message to stdout announcing that we finished launching transports..
+        Write a message to stdout announcing that we finished launching transports.
         """
 
         self.emit('%sS DONE' % self.methodName)
+
+    def getDebugData(self):
+        """
+        Return a dict containing internal data in arbitrary format, for debugging.
+        The data should only be presented and not processed further.
+        """
+        d = dict(self.__dict__)
+        d["config"] = dict(self.config.__dict__)
+        d["__class__"] = self.__class__
+        return d
 
     def emit(self, msg):
         """

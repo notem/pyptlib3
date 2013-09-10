@@ -82,7 +82,7 @@ def get_env(key, validate=env_has_k):
     try:
         return validate(key, os.getenv(key))
     except Exception, e:
-        raise EnvError(cause=e)
+        raise EnvError("error parsing env-var: %s: %s" % (key, e), e)
 
 class EnvError(Exception):
     """

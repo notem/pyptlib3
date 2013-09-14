@@ -2,7 +2,7 @@ import os
 import unittest
 
 from pyptlib.config import EnvError, Config
-from pyptlib.server_config import validate_transport_options
+from pyptlib.server_config import get_transport_options_impl
 from pyptlib.server import ServerTransportPlugin
 from pyptlib.test.test_core import PluginCoreTestMixin
 from pyptlib.core import SUPPORTED_TRANSPORT_VERSIONS
@@ -143,6 +143,46 @@ class testServer(PluginCoreTestMixin, unittest.TestCase):
         self.assertEquals(bindaddr["boom"], ('127.0.0.1', 6666))
         self.assertOutputLinesStartWith("VERSION ")
 
+class testServerOutput(PluginCoreTestMixin, unittest.TestCase):
+    """
+    Test the output of pyptlib. That is, test the SMETHOD lines, etc.
+    """
+    pluginType = ServerTransportPlugin
+
+    def test_smethod_line(self):
+        """Test output SMETHOD lines."""
+        os.environ = BASE_ENVIRON
+        self.plugin.init(["dummy", "boom"])
+        for transport, transport_bindaddr in self.plugin.getBindAddresses().items():
+            self.plugin.reportMethodSuccess(transport, transport_bindaddr, None)
+        self.plugin.reportMethodsEnd()
+
+        self.assertIn("SMETHOD dummy 127.0.0.1:5556\n", self.getOutputLines())
+        self.assertIn("SMETHOD boom 127.0.0.1:6666\n", self.getOutputLines())
+        self.assertIn("SMETHODS DONE\n", self.getOutputLines())
+
+    def test_smethod_line_args(self):
+        """Test an SMETHOD line with extra arguments."""
+        TEST_ENVIRON = dict(BASE_ENVIRON)
+        TEST_ENVIRON["TOR_PT_SERVER_TRANSPORT_OPTIONS"] = "boom:roots=culture;random:no=care;boom:first=fire"
+        os.environ = TEST_ENVIRON
+        self.plugin.init(["dummy", "boom"])
+        for transport, transport_bindaddr in self.plugin.getBindAddresses().items():
+            self.plugin.reportMethodSuccess(transport, transport_bindaddr, None)
+        self.plugin.reportMethodsEnd()
+
+        self.assertIn("SMETHOD boom 127.0.0.1:6666 ARGS:roots=culture,first=fire\n", self.getOutputLines())
+
+    def test_smethod_line_explicit_args(self):
+        """Test an SMETHOD line with extra arguments."""
+        os.environ = BASE_ENVIRON
+        self.plugin.init(["dummy", "boom"])
+        for transport, transport_bindaddr in self.plugin.getBindAddresses().items():
+            self.plugin.reportMethodSuccess(transport, transport_bindaddr, "roots=culture,first=fire")
+        self.plugin.reportMethodsEnd()
+
+        self.assertIn("SMETHOD boom 127.0.0.1:6666 ARGS:roots=culture,first=fire\n", self.getOutputLines())
+
 class testUtils(unittest.TestCase):
     def test_get_transport_options_wrong(self):
         """Invalid options string"""
@@ -159,7 +199,7 @@ class testUtils(unittest.TestCase):
         expected = {"trebuchet" : {"secret" : "nou", "cache" : "/tmp/cache"} , "ballista" : {"secret" : "yes", "fun" : "no"}, "archer" : {"bow" : "yes" } }
 
         result = get_transport_options_impl(to_parse)
-        self.assertEquals(result, expected) # XXX does this check iteratables?
+        self.assertEquals(result, expected)
 
 if __name__ == '__main__':
     unittest.main()

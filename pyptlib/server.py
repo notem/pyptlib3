@@ -23,15 +23,28 @@ class ServerTransportPlugin(TransportPlugin):
 
         :param str name: Name of transport.
         :param tuple addrport: (addr,port) where this transport is listening for connections.
-        :param str options: Transport options.
+        :param str options: String containting comma-separated
+                            transport options in key=value form (as
+                            they appear in the ARGS: SMETHOD option)
         """
 
+        extra = ""
         if options:
-            self.emit('SMETHOD %s %s:%s %s' % (name, addrport[0],
-                      addrport[1], options))
-        else:
-            self.emit('SMETHOD %s %s:%s' % (name, addrport[0],
-                      addrport[1]))
+            extra = " ARGS:%s" % options
+        elif self.config.serverTransportOptions:
+            optlist = []
+
+            # self.config.serverTransportOptions looks like this:
+            # {'obfs3': {'k':'v'}, 'scramblesuit': {'k2' : 'v2', 'k' : 'v'} }
+            for transport_name, options_dict in self.config.serverTransportOptions.items():
+                if transport_name != name:
+                    continue
+
+                for k, v in options_dict.items():
+                    optlist.append("%s=%s" % (k,v))
+            extra = " ARGS:%s" % (",".join(optlist))
+
+        self.emit('SMETHOD %s %s:%s%s' % (name, addrport[0], addrport[1], extra))
 
     def getBindAddresses(self):
         """

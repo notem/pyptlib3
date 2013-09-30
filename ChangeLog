@@ -1,3 +1,7 @@
+Changes in version 0.0.5 - UNRELEASED
+ - API change to expose server-side transport options. Fixes #8979.
+
+
 Changes in version 0.0.4 - 2013-09-11
  - Add a subprocess management module, which should make it easier to
    write composed plugins such as obfs-flash, and the 2-INT termination

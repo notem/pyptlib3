@@ -1,4 +1,4 @@
-Changes in version 0.0.5 - UNRELEASED
+Changes in version 0.0.5 - 2013-09-30
  - API change to expose server-side transport options. Fixes #8979.
 
 

@@ -28,7 +28,9 @@ a = inspect.getargspec(subprocess.Popen.__init__)
 _Popen_defaults = zip(a.args[-len(a.defaults):],a.defaults); del a
 if mswindows:
     # required for os.kill() to work
-    _Popen_defaults['creationflags'] |= subprocess.CREATE_NEW_PROCESS_GROUP
+    tmp = dict(_Popen_defaults)
+    tmp['creationflags'] |= subprocess.CREATE_NEW_PROCESS_GROUP
+    _Popen_defaults = tmp.items()
 
 class Popen(subprocess.Popen):
     """Wrapper for subprocess.Popen that tracks every child process.

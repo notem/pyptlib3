@@ -31,6 +31,7 @@ if mswindows:
     tmp = dict(_Popen_defaults)
     tmp['creationflags'] |= subprocess.CREATE_NEW_PROCESS_GROUP
     _Popen_defaults = tmp.items()
+    del tmp
 
 class Popen(subprocess.Popen):
     """Wrapper for subprocess.Popen that tracks every child process.

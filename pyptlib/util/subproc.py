@@ -109,45 +109,57 @@ else:
             return True
 
 
-_SIGINT_RUN = {}
-def trap_sigint(handler, ignoreNum=0):
-    """Register a handler for an INT signal.
+class SignalHandlers(object):
 
-    Successive traps registered via this function are cumulative, and override
-    any previous handlers registered using signal.signal(). To reset these
-    cumulative traps, call signal.signal() with another (maybe dummy) handler.
+    def __init__(self):
+        self.handlers = {}
+        self.received = 0
+
+    def attach_override_unix(self, signum):
+        if signal.signal(signum, self.handle) != self.handle:
+            self.handlers.clear()
+
+    def handle(self, signum=0, sframe=None):
+        self.received += 1
+
+        # code snippet adapted from atexit._run_exitfuncs
+        exc_info = None
+        for i in xrange(self.received).__reversed__():
+            for handler in self.handlers.get(i, []).__reversed__():
+                try:
+                    handler(signum, sframe)
+                except SystemExit:
+                    exc_info = sys.exc_info()
+                except:
+                    import traceback
+                    print >> sys.stderr, "Error in SignalHandler.handle:"
+                    traceback.print_exc()
+                    exc_info = sys.exc_info()
+
+        if exc_info is not None:
+            raise exc_info[0], exc_info[1], exc_info[2]
+
+    def register(self, handler, ignoreNum):
+        self.handlers.setdefault(ignoreNum, []).append(handler)
+
+
+_SIGINT_HANDLERS = SignalHandlers()
+def trap_sigint(handler, ignoreNum=0):
+    """Register a handler for an INT signal (Unix).
+
+    Note: this currently has no effect on windows.
+
+    Successive handlers are cumulative. On Unix, they override any previous
+    handlers registered with signal.signal().
 
     Args:
         handler: a signal handler; see signal.signal() for details
         ignoreNum: number of signals to ignore before activating the handler,
             which will be run on all subsequent signals.
     """
-    prev_handler = signal.signal(signal.SIGINT, _run_sigint_handlers)
-    if prev_handler != _run_sigint_handlers:
-        _SIGINT_RUN.clear()
-    _SIGINT_RUN.setdefault(ignoreNum, []).append(handler)
-
-_intsReceived = 0
-def _run_sigint_handlers(signum=0, sframe=None):
-    global _intsReceived
-    _intsReceived += 1
-
-    # code snippet adapted from atexit._run_exitfuncs
-    exc_info = None
-    for i in xrange(_intsReceived).__reversed__():
-        for handler in _SIGINT_RUN.get(i, []).__reversed__():
-            try:
-                handler(signum, sframe)
-            except SystemExit:
-                exc_info = sys.exc_info()
-            except:
-                import traceback
-                print >> sys.stderr, "Error in subproc._run_sigint_handlers:"
-                traceback.print_exc()
-                exc_info = sys.exc_info()
-
-    if exc_info is not None:
-        raise exc_info[0], exc_info[1], exc_info[2]
+    handlers = _SIGINT_HANDLERS
+    handlers.attach_override_unix(signal.SIGINT)
+    handlers.register(handler, ignoreNum)
 
 
 _isTerminating = False

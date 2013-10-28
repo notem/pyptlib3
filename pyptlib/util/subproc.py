@@ -62,31 +62,34 @@ def create_sink():
 
 
 if mswindows:
-    # from http://www.madebuild.org/blog/?p=30
-    from ctypes import byref, windll
+    # adapted from http://www.madebuild.org/blog/?p=30
+    from ctypes import byref, windll, WinError
     from ctypes.wintypes import DWORD
 
     # GetExitCodeProcess uses a special exit code to indicate that the process is
-    # still running.
+    # still running. It also requires non-default permissions, otherwise we get
+    # Access Denied even for running processes. For more details, see
+    # http://msdn.microsoft.com/en-us/library/windows/desktop/ms683189%28v=vs.85%29.aspx
+    # http://msdn.microsoft.com/en-us/library/windows/desktop/ms684880%28v=vs.85%29.aspx
     _STILL_ACTIVE = 259
+    _SYNCHRONIZE = 0x00100000
+    _PROCESS_QUERY_INFORMATION = 0x0400
 
     def proc_is_alive(pid):
         """Check if a pid is still running."""
-
-        handle = windll.kernel32.OpenProcess(1, 0, pid)
+        handle = windll.kernel32.OpenProcess(
+            _SYNCHRONIZE | _PROCESS_QUERY_INFORMATION, 0, pid)
         if handle == 0:
             return False
 
         # If the process exited recently, a pid may still exist for the handle.
         # So, check if we can get the exit code.
         exit_code = DWORD()
-        is_running = (
-            windll.kernel32.GetExitCodeProcess(handle, byref(exit_code)) == 0)
+        rval = windll.kernel32.GetExitCodeProcess(handle, byref(exit_code))
         windll.kernel32.CloseHandle(handle)
-
-        # See if we couldn't get the exit code or the exit code indicates that the
-        # process is still running.
-        return is_running or exit_code.value == _STILL_ACTIVE
+        if rval == 0: # GetExitCodeProcess failure
+            raise WinError()
+        return exit_code.value == _STILL_ACTIVE
 
 else:
     # adapted from http://stackoverflow.com/questions/568271/check-if-pid-is-not-in-use-in-python

@@ -45,6 +45,7 @@ class SubprocTest(unittest.TestCase):
 
     def test_trap_sigint_multiple(self):
         """Test that adding multiple SIGINT handlers works as expected."""
+        # TODO(infinity0): KNOWN TO FAIL ON WINDOWS
         proc = self.spawnMain()
         proc.send_signal(signal.SIGINT)
         self.assertEquals("run h1\n", proc.stdout.readline())
@@ -55,6 +56,7 @@ class SubprocTest(unittest.TestCase):
 
     def test_trap_sigint_reset(self):
         """Test that resetting SIGINT handlers works as expected."""
+        # TODO(infinity0): KNOWN TO FAIL ON WINDOWS
         proc = self.spawnMain()
         proc.send_signal(signal.SIGINT)
         self.assertEquals("run h2\n", proc.stdout.readline())
@@ -75,6 +77,7 @@ class SubprocTest(unittest.TestCase):
 
     def test_auto_killall_2_int(self):
         """Test that auto_killall works for 2-INT signals."""
+        # TODO(infinity0): KNOWN TO FAIL ON WINDOWS
         proc = self.spawnMain()
         pid = proc.pid
         cid = self.readChildPid(proc)

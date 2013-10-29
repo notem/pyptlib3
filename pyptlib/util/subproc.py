@@ -15,6 +15,15 @@ import sys
 import time
 
 mswindows = (sys.platform == "win32")
+if mswindows:
+    from ctypes import byref, windll, WinError
+    from ctypes.wintypes import DWORD
+    import win32api, win32job
+
+    _SYNCHRONIZE = 0x00100000 # generically useful
+    _PROCESS_QUERY_INFORMATION = 0x0400 # required for GetExitCodeProcess
+    _STILL_ACTIVE = 259 # GetExitCodeProcess returns this for still-running process
+
 
 _CHILD_PROCS = []
 # TODO(infinity0): add functionality to detect when any child dies, and
@@ -38,6 +47,9 @@ class Popen(subprocess.Popen):
 
     See the subprocess module for documentation.
 
+    On windows, you are recommended to use the creationflagsmerge param so as
+    not to interfere with the required flags that we set in this module.
+
     Additionally, you may use subproc.SINK as the value for either of the
     stdout, stderr arguments to tell subprocess to discard anything written
     to those channels.
@@ -45,6 +57,10 @@ class Popen(subprocess.Popen):
 
     def __init__(self, *args, **kwargs):
         kwargs = dict(_Popen_defaults + kwargs.items())
+        if 'creationflagsmerge' in kwargs:
+            kwargs['creationflags'] = (
+                kwargs.get('creationflags', 0) | kwargs['creationflagsmerge'])
+            del kwargs['creationflagsmerge']
         for f in ['stdout', 'stderr']:
             if kwargs[f] is SINK:
                 kwargs[f] = create_sink()
@@ -63,17 +79,6 @@ def create_sink():
 
 if mswindows:
     # adapted from http://www.madebuild.org/blog/?p=30
-    from ctypes import byref, windll, WinError
-    from ctypes.wintypes import DWORD
-
-    # GetExitCodeProcess uses a special exit code to indicate that the process is
-    # still running. It also requires non-default permissions, otherwise we get
-    # Access Denied even for running processes. For more details, see
-    # http://msdn.microsoft.com/en-us/library/windows/desktop/ms683189%28v=vs.85%29.aspx
-    # http://msdn.microsoft.com/en-us/library/windows/desktop/ms684880%28v=vs.85%29.aspx
-    _STILL_ACTIVE = 259
-    _SYNCHRONIZE = 0x00100000
-    _PROCESS_QUERY_INFORMATION = 0x0400
 
     def proc_is_alive(pid):
         """Check if a pid is still running."""

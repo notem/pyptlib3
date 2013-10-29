@@ -16,9 +16,18 @@ import time
 
 mswindows = (sys.platform == "win32")
 if mswindows:
+    """
+    Set KILL_CHILDREN_ON_DEATH=1 in the environment to automatically kill all
+    descendents when this process dies.
+    """
+    # TODO(infinity0): write a test for this, similar to test_killall_kill
+    # Note: setting this to True defeats the point of some of the tests, so
+    # keep the default value as False. Perhaps we could make that work better.
+    _kill_children_on_death = bool(os.getenv("KILL_CHILDREN_ON_DEATH", 0))
+
     from ctypes import byref, windll, WinError
     from ctypes.wintypes import DWORD
-    import win32api, win32con, win32job
+    import win32api, win32con, win32job, win32process
 
 _CHILD_PROCS = []
 # TODO(infinity0): add functionality to detect when any child dies, and
@@ -32,10 +41,37 @@ a = inspect.getargspec(subprocess.Popen.__init__)
 _Popen_defaults = zip(a.args[-len(a.defaults):],a.defaults); del a
 if mswindows:
     # required for os.kill() to work
+    _Popen_creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
+
+    if _kill_children_on_death:
+        _chJob = win32job.CreateJobObject(None, "")
+        if not _chJob:
+            raise WinError()
+
+        chJeli = win32job.QueryInformationJobObject(
+            _chJob, win32job.JobObjectExtendedLimitInformation)
+        # JOB_OBJECT_LIMIT_BREAKAWAY_OK allows children to assign grandchildren
+        # to their own jobs
+        chJeli['BasicLimitInformation']['LimitFlags'] |= (
+            win32job.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE |
+            win32job.JOB_OBJECT_LIMIT_BREAKAWAY_OK)
+
+        if win32job.SetInformationJobObject(
+            _chJob, win32job.JobObjectExtendedLimitInformation, chJeli) == 0:
+            raise WinError()
+        del chJeli
+
+        # If we already belong to a JobObject, our children are auto-assigned
+        # to that and AssignProcessToJobObject(ch, _chJob) fails. This flag
+        # prevents this auto-assignment, as long as the parent JobObject has
+        # JOB_OBJECT_LIMIT_BREAKAWAY_OK set on it as well.
+        _Popen_creationflags |= win32process.CREATE_BREAKAWAY_FROM_JOB
+
     tmp = dict(_Popen_defaults)
-    tmp['creationflags'] |= subprocess.CREATE_NEW_PROCESS_GROUP
+    tmp['creationflags'] |= _Popen_creationflags
     _Popen_defaults = tmp.items()
-    del tmp
+    del tmp, _Popen_creationflags
+
 
 class Popen(subprocess.Popen):
     """Wrapper for subprocess.Popen that tracks every child process.
@@ -63,6 +99,12 @@ class Popen(subprocess.Popen):
         # our super-constructor directly
         subprocess.Popen.__init__(self, *args, **kwargs)
         _CHILD_PROCS.append(self)
+
+        if mswindows and _kill_children_on_death:
+            handle = windll.kernel32.OpenProcess(
+                win32con.SYNCHRONIZE | win32con.PROCESS_SET_QUOTA | win32con.PROCESS_TERMINATE, 0, self.pid)
+            if win32job.AssignProcessToJobObject(_chJob, handle) == 0:
+                raise WinError()
 
     # TODO(infinity0): perhaps replace Popen.std* with wrapped file objects
     # that don't buffer readlines() et. al. Currently one must avoid these and

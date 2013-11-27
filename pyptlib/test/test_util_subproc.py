@@ -62,6 +62,7 @@ class SubprocTest(unittest.TestCase):
 
     def test_killall_kill(self):
         """Test that killall() can kill -9 a hung process."""
+        # TODO(infinity0): KNOWN TO FAIL ON WINDOWS
         proc = self.spawnMain()
         pid = proc.pid
         cid = self.readChildPid(proc)
@@ -90,6 +91,7 @@ class SubprocTest(unittest.TestCase):
 
     def test_auto_killall_term(self):
         """Test that auto_killall works for TERM signals."""
+        # TODO(infinity0): KNOWN TO FAIL ON WINDOWS
         proc = self.spawnMain()
         pid = proc.pid
         cid = self.readChildPid(proc)

@@ -18,12 +18,7 @@ mswindows = (sys.platform == "win32")
 if mswindows:
     from ctypes import byref, windll, WinError
     from ctypes.wintypes import DWORD
-    import win32api, win32job
-
-    _SYNCHRONIZE = 0x00100000 # generically useful
-    _PROCESS_QUERY_INFORMATION = 0x0400 # required for GetExitCodeProcess
-    _STILL_ACTIVE = 259 # GetExitCodeProcess returns this for still-running process
-
+    import win32api, win32con, win32job
 
 _CHILD_PROCS = []
 # TODO(infinity0): add functionality to detect when any child dies, and
@@ -83,7 +78,7 @@ if mswindows:
     def proc_is_alive(pid):
         """Check if a pid is still running."""
         handle = windll.kernel32.OpenProcess(
-            _SYNCHRONIZE | _PROCESS_QUERY_INFORMATION, 0, pid)
+            win32con.SYNCHRONIZE | win32con.PROCESS_QUERY_INFORMATION, 0, pid)
         if handle == 0:
             return False
 
@@ -94,7 +89,7 @@ if mswindows:
         windll.kernel32.CloseHandle(handle)
         if rval == 0: # GetExitCodeProcess failure
             raise WinError()
-        return exit_code.value == _STILL_ACTIVE
+        return exit_code.value == win32con.STILL_ACTIVE
 
 else:
     # adapted from http://stackoverflow.com/questions/568271/check-if-pid-is-not-in-use-in-python

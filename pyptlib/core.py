@@ -1,6 +1,6 @@
 import sys
 
-from pyptlib.config import EnvError, SUPPORTED_TRANSPORT_VERSIONS
+from pyptlib.config import EnvError, ProxyError, SUPPORTED_TRANSPORT_VERSIONS
 
 
 class TransportPlugin(object):
@@ -56,6 +56,9 @@ class TransportPlugin(object):
         """
         try:
             return self.configType.fromEnv()
+        except ProxyError, e:
+            self.emit('PROXY-ERROR %s' % str(e))
+            raise EnvError(str(e))
         except EnvError, e:
             self.emit('ENV-ERROR %s' % str(e))
             raise e

@@ -81,8 +81,21 @@ def get_env(key, validate=env_has_k):
     """
     try:
         return validate(key, os.getenv(key))
+    except ProxyError:
+        raise
     except Exception, e:
         raise EnvError("error parsing env-var: %s: %s" % (key, e), e)
+
+class ProxyError(Exception):
+    """
+    Thrown when the proxy specifier is incomplete or corrupted.
+    """
+    def __init__(self, message=None, cause=None):
+        self.message = message
+        self.cause = cause
+
+    def __str__(self):
+        return self.message or self.cause.message
 
 class EnvError(Exception):
     """

@@ -15,6 +15,7 @@ class ClientTransportPlugin(TransportPlugin):
     """
     configType = ClientConfig
     methodName = 'CMETHOD'
+    reportedProxy = False
 
     def reportMethodSuccess(self, name, protocol, addrport, args=None, optArgs=None):
         """
@@ -36,6 +37,36 @@ class ClientTransportPlugin(TransportPlugin):
             methodLine = methodLine + ' OPT-ARGS=' + args.join(',')
         self.emit(methodLine)
 
+    def reportProxySuccess(self):
+        """
+        Write a message to stdout announcing that the specified proxy will be
+        used.
+        """
+
+        if not self.config.proxy:
+            raise RuntimeError("reportProxySuccess() when no proxy specified")
+        elif self.reportedProxy:
+            raise RuntimeError("reportProxySuccess() after status already reported")
+        else:
+            self.reportedProxy = True
+            self.emit("PROXY true")
+
+    def reportProxyError(self, msg=None):
+        """
+        Write a message to stdout announcing that the specified proxy can not be
+        used.
+        """
+
+        if not self.config.proxy:
+            raise RuntimeError("reportProxyError() when no proxy specified")
+        elif self.reportedProxy:
+            raise RuntimeError("reportProxyError() after status already reported")
+        else:
+            self.reportedProxy = True
+            proxyLine = 'PROXY-ERROR'
+            if msg and len(msg) > 0:
+                proxyLine += ' ' + msg
+            self.emit(proxyLine)
 
 def init(supported_transports):
     """DEPRECATED. Use ClientTransportPlugin().init() instead."""

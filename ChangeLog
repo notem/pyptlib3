@@ -1,3 +1,8 @@
+Changes in version 0.0.6 - UNRELEASED
+ - Add support for TOR_PT_PROXY to allow client side proxy use.  Patch by
+   Yawning Angel.
+
+
 Changes in version 0.0.5 - 2013-09-30
  - API change to expose server-side transport options. Fixes #8979.
 

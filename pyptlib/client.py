@@ -49,7 +49,7 @@ class ClientTransportPlugin(TransportPlugin):
             raise RuntimeError("reportProxySuccess() after status already reported")
         else:
             self.reportedProxy = True
-            self.emit("PROXY true")
+            self.emit("PROXY DONE")
 
     def reportProxyError(self, msg=None):
         """

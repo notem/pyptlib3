@@ -50,7 +50,17 @@ class ClientConfig(Config):
 
     def getProxy(self):
         """
+        Get the proxy that should be used for outgoing connections if any.
+
+        The returned urlparse.SplitResult has the following attributes:
+         * scheme - one of 'socks4a', 'socks5', or 'https'
+         * hostname - Hostname of the proxy
+         * port - TCP port of the proxy
+         * username - Username to use for proxy authentication (optional)
+         * password - Password to use for proxy authentication (optional)
+
         :returns: :attr:`pyptlib.client_config.ClientConfig.proxy`
+
         """
         return self.proxy
 

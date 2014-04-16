@@ -1,4 +1,4 @@
-Changes in version 0.0.6 - UNRELEASED
+Changes in version 0.0.6 - 2014-04-16
  - Add support for TOR_PT_PROXY to allow client side proxy use.  This
    is the pyptlib portion of the fixes for #8956.  Patch by Yawning
    Angel.

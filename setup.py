@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-
 import sys
 
 from setuptools import setup, find_packages
+from pyptlib import __version__
 
 setup(name='pyptlib',
-      version='0.0.6',
+      version=__version__,
       description='A python implementation of the Pluggable Transports for Circumvention specification for Tor',
       long_description='A python implementation of the Pluggable Transports for Circumvention specification for Tor',
       author='asn, Brandon Wiley',

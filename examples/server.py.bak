@@ -12,11 +12,11 @@ if __name__ == '__main__':
     server = ServerTransportPlugin()
     try:
         server.init(["blackfish", "bluefish"])
-    except EnvError as err:
-        print("pyptlib could not bootstrap ('%s')." % str(err))
+    except EnvError, err:
+        print "pyptlib could not bootstrap ('%s')." % str(err)
         sys.exit(1)
 
-    for transport, transport_bindaddr in list(server.getBindAddresses().items()):
+    for transport, transport_bindaddr in server.getBindAddresses().items():
         # Try to spawn transports and make them listen in the ports
         # that Tor wants. Report failure or success appropriately.
 
@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
         try:
             bind_addrport = your_function_that_launches_transports(transport, transport_bindaddr)
-        except YourFailException as err:
+        except YourFailException, err:
             reportFailure(transport, "Failed to launch ('%s')." % str(err))
             continue
 

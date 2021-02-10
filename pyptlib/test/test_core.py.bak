@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from io import StringIO
+from cStringIO import StringIO
 
 from pyptlib.config import EnvError, Config
 
@@ -65,7 +65,7 @@ class PluginCoreTestMixin(object):
         """Partial transports"""
         self.installTestConfig(transports="are,you,a,badfish,too?".split(","))
         self.plugin._declareSupports(["badfish", "not_any_of_above"])
-        self.assertEqual(self.plugin.getTransports(), ["badfish"])
+        self.assertEquals(self.plugin.getTransports(), ["badfish"])
         self.assertOutputLinesStartWith("VERSION ")
 
     def test_getTransports_noinit(self):
@@ -82,7 +82,7 @@ class PluginCoreTestMixin(object):
         """init results in correct getTransports."""
         self.installTestConfig(transports=["yeayeayea"])
         self.plugin.init(["yeayeayea"])
-        self.assertEqual(["yeayeayea"], self.plugin.getTransports())
+        self.assertEquals(["yeayeayea"], self.plugin.getTransports())
         self.assertOutputLinesStartWith("VERSION ")
 
 class DummyConfig(Config):

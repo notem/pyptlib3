@@ -16,20 +16,20 @@ def startChild(subcmd, report=False, stdout=SINK, **kwargs):
         **kwargs
     )
     if report:
-        print("child %s" % proc.pid)
+        print "child %s" % proc.pid
         sys.stdout.flush()
     return proc
 
 def sleepIgnoreInts(ignoreNumInts=3):
-    for i in range(ignoreNumInts):
+    for i in xrange(ignoreNumInts):
         time.sleep(100)
 
 def handler1(signum=0, sframe=None):
-    print("run h1")
+    print "run h1"
     sys.stdout.flush()
 
 def handler2(signum=0, sframe=None):
-    print("run h2")
+    print "run h2"
     sys.stdout.flush()
 
 def main_Popen_IOpassthru(testname, *argv):

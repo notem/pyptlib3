@@ -48,10 +48,10 @@ class SubprocTest(unittest.TestCase):
         # TODO(infinity0): KNOWN TO FAIL ON WINDOWS
         proc = self.spawnMain()
         proc.send_signal(signal.SIGINT)
-        self.assertEqual("run h1\n", proc.stdout.readline())
+        self.assertEquals("run h1\n", proc.stdout.readline())
         proc.send_signal(signal.SIGINT)
-        self.assertEqual("run h2\n", proc.stdout.readline())
-        self.assertEqual("run h1\n", proc.stdout.readline())
+        self.assertEquals("run h2\n", proc.stdout.readline())
+        self.assertEquals("run h1\n", proc.stdout.readline())
         proc.terminate()
 
     def test_trap_sigint_reset(self):
@@ -59,7 +59,7 @@ class SubprocTest(unittest.TestCase):
         # TODO(infinity0): KNOWN TO FAIL ON WINDOWS
         proc = self.spawnMain()
         proc.send_signal(signal.SIGINT)
-        self.assertEqual("run h2\n", proc.stdout.readline())
+        self.assertEquals("run h2\n", proc.stdout.readline())
         proc.terminate()
 
     def test_killall_kill(self):
